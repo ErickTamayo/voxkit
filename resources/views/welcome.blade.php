@@ -6,6 +6,7 @@
 
         <title>{{ config('app.name', 'Laravel') }}</title>
 
+        @viteReactRefresh
         @vite('resources/js/app.tsx')
     </head>
     <body>
