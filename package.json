@@ -4,14 +4,34 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "dev:capacitor": "vite --config vite.capacitor.config.ts --host --port 5173 --strictPort",
+        "typecheck": "tsc --noEmit",
+        "cap:build": "vite build --config vite.capacitor.config.ts",
+        "cap:init": "npx cap init",
+        "cap:sync": "npm run cap:build && npx cap sync",
+        "cap:run:ios": "npx cap run ios --no-sync",
+        "cap:run:ios:live": "npx cap run ios --no-sync -l --host=127.0.0.1 --port=5173",
+        "cap:open:ios": "npx cap open ios",
+        "cap:open:android": "npx cap open android"
     },
     "devDependencies": {
+        "@capacitor/cli": "^8.1.0",
         "@tailwindcss/vite": "^4.0.0",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@vitejs/plugin-react": "^5.1.4",
         "axios": "^1.11.0",
         "concurrently": "^9.0.1",
         "laravel-vite-plugin": "^2.0.0",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
         "tailwindcss": "^4.0.0",
+        "typescript": "^5.9.3",
         "vite": "^7.0.7"
+    },
+    "dependencies": {
+        "@capacitor/core": "^8.1.0",
+        "@capacitor/ios": "^8.1.0"
     }
 }

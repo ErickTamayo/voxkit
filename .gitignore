@@ -13,6 +13,7 @@
 /.zed
 /auth.json
 /node_modules
+/dist-capacitor
 /public/build
 /public/hot
 /public/storage
