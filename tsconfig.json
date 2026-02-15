@@ -1,23 +1,32 @@
 {
     "compilerOptions": {
         "target": "ES2022",
-        "lib": ["ES2023", "DOM", "DOM.Iterable"],
+        "lib": [
+            "ES2023",
+            "DOM",
+            "DOM.Iterable"
+        ],
         "module": "ESNext",
         "moduleResolution": "Bundler",
-        "baseUrl": ".",
+        // "baseUrl": ".",
         "paths": {
-            "@/*": ["resources/js/*"]
+            "@/*": [
+                "./resources/js/*"
+            ]
         },
         "allowJs": false,
         "resolveJsonModule": true,
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
         "isolatedModules": true,
+        "allowImportingTsExtensions": true,
         "noEmit": true,
         "jsx": "react-jsx",
         "strict": true,
         "skipLibCheck": true,
-        "types": ["vite/client"]
+        "types": [
+            "vite/client"
+        ]
     },
     "include": [
         "resources/js/**/*.ts",
@@ -25,6 +34,7 @@
         "resources/capacitor/**/*.ts",
         "resources/capacitor/**/*.tsx",
         "capacitor.config.ts",
+        "codegen.back.ts",
         "vite.config.ts",
         "vite.capacitor.config.ts"
     ]

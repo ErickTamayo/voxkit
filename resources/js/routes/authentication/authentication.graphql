@@ -1,0 +1,20 @@
+mutation RequestAuthenticationCode($input: RequestAuthenticationCodeInput!) {
+    requestAuthenticationCode(input: $input) {
+        ok
+        message
+    }
+}
+
+mutation AuthenticateWithCode($input: AuthenticateWithCodeInput!) {
+    authenticateWithCode(input: $input) {
+        ok
+        message
+    }
+}
+
+mutation Logout {
+    logout {
+        ok
+        message
+    }
+}

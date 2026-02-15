@@ -5,7 +5,14 @@ import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig({
     root: 'resources/capacitor',
-    plugins: [react(), tailwindcss()],
+    plugins: [
+        react({
+            babel: {
+                plugins: ['babel-plugin-react-compiler'],
+            },
+        }),
+        tailwindcss(),
+    ],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./resources/js', import.meta.url)),

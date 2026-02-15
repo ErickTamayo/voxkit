@@ -1,30 +1,48 @@
 import "../css/app.css";
-import { StrictMode } from "react";
+import { ApolloProvider } from "@apollo/client/react";
+import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { Button } from "@/components/ui/button";
+import { Redirect, Route, Switch } from "wouter";
+import { RouteWithLayout } from "@/components/RouteWithLayout";
+import { apolloClient } from "@/lib/apolloClient";
+import { AuthenticationCardLayout } from "@/routes/authentication/layouts/AuthenticationCard.layout";
 
-function App() {
+const HomeRoute = lazy(() => import("@/routes/home/home.route"));
+const SignInRoute = lazy(() => import("@/routes/authentication/SignIn.route"));
+const VerifyCodeRoute = lazy(
+    () => import("@/routes/authentication/VerifyCode.route"),
+);
+const AuthenticatedRoute = lazy(
+    () => import("@/routes/authentication/Authenticated.route"),
+);
+
+function App(): React.JSX.Element {
     return (
-        <main className="grid min-h-screen place-items-center bg-muted p-6">
-            <section className="w-full max-w-2xl rounded-xl border bg-card p-8 text-card-foreground shadow-xs">
-                <p className="mb-4 inline-flex rounded-full bg-secondary px-3 py-1 text-xs font-semibold tracking-[0.06em] text-secondary-foreground uppercase">
-                    Laravel + Vite + React + Capacitor + shadcn/ui
-                </p>
-                <h1 className="text-balance text-4xl leading-tight font-semibold sm:text-5xl">
-                    Figma-themed shadcn setup is mounted
-                </h1>
-                <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-                    This app is rendered from <code>/resources/js/app.tsx</code>{" "}
-                    and loaded by the Laravel <code>/</code> route.
-                </p>
-                <div className="mt-8 flex flex-wrap gap-3">
-                    <Button>Primary</Button>
-                    <Button variant="secondary">Secondary</Button>
-                    <Button variant="outline">Outline</Button>
-                    <Button variant="destructive">Destructive</Button>
-                </div>
-            </section>
-        </main>
+        <ApolloProvider client={apolloClient}>
+            <Suspense>
+                <Switch>
+                    <RouteWithLayout path="/" component={HomeRoute} />
+                    <RouteWithLayout
+                        path="/signin"
+                        component={SignInRoute}
+                        layouts={[AuthenticationCardLayout]}
+                    />
+                    <RouteWithLayout
+                        path="/verify/:email"
+                        component={VerifyCodeRoute}
+                        layouts={[AuthenticationCardLayout]}
+                    />
+                    <RouteWithLayout
+                        path="/account"
+                        component={AuthenticatedRoute}
+                        layouts={[AuthenticationCardLayout]}
+                    />
+                    <Route>
+                        <Redirect to="/" />
+                    </Route>
+                </Switch>
+            </Suspense>
+        </ApolloProvider>
     );
 }
 

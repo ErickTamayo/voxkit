@@ -1,0 +1,129 @@
+"Input for verifying an authentication code."
+input AuthenticateWithCodeInput {
+  "6-digit numeric authentication code."
+  code: String!
+
+  "Email address that requested the authentication code."
+  email: String!
+}
+
+"Response for authenticating with an authentication code."
+type AuthenticateWithCodeResponse {
+  message: String
+  ok: Boolean!
+}
+
+"A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
+scalar DateTime
+
+"Response for logging out."
+type LogoutResponse {
+  message: String
+  ok: Boolean!
+}
+
+"Indicates what fields are available at the top level of a mutation operation."
+type Mutation {
+  "Verify a sign-in code and create a session."
+  authenticateWithCode(input: AuthenticateWithCodeInput!): AuthenticateWithCodeResponse!
+
+  "Log out the currently authenticated session."
+  logout: LogoutResponse!
+
+  "Request a sign-in code for an email address."
+  requestAuthenticationCode(input: RequestAuthenticationCodeInput!): RequestAuthenticationCodeResponse!
+}
+
+"Allows ordering a list of records."
+input OrderByClause {
+  "The column that is used for ordering."
+  column: String!
+
+  "The direction that is used for ordering."
+  order: SortOrder!
+}
+
+"Aggregate functions when ordering by a relation without specifying a column."
+enum OrderByRelationAggregateFunction {
+  "Amount of items."
+  COUNT
+}
+
+"Aggregate functions when ordering by a relation that may specify a column."
+enum OrderByRelationWithColumnAggregateFunction {
+  "Average."
+  AVG
+
+  "Amount of items."
+  COUNT
+
+  "Maximum."
+  MAX
+
+  "Minimum."
+  MIN
+
+  "Sum."
+  SUM
+}
+
+"Indicates what fields are available at the top level of a query operation."
+type Query {
+  "Return the currently authenticated user."
+  me: User!
+}
+
+"Input for requesting an authentication code."
+input RequestAuthenticationCodeInput {
+  "Email address to receive the authentication code."
+  email: String!
+}
+
+"Response for requesting an authentication code."
+type RequestAuthenticationCodeResponse {
+  message: String
+  ok: Boolean!
+}
+
+"Directions for ordering a list of records."
+enum SortOrder {
+  "Sort records in ascending order."
+  ASC
+
+  "Sort records in descending order."
+  DESC
+}
+
+"Specify if you want to include or exclude trashed results from a query."
+enum Trashed {
+  "Only return trashed results."
+  ONLY
+
+  "Return both trashed and non-trashed results."
+  WITH
+
+  "Only return non-trashed results."
+  WITHOUT
+}
+
+"Account of a person who uses this application."
+type User {
+  "When the account was created."
+  created_at: DateTime!
+
+  "Unique email address."
+  email: String!
+
+  "When the email was verified."
+  email_verified_at: DateTime
+
+  "Unique primary key."
+  id: ID!
+
+  "Non-unique name."
+  name: String!
+
+  "When the account was last updated."
+  updated_at: DateTime!
+}
+

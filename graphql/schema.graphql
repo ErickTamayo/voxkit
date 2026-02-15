@@ -7,6 +7,54 @@ type Query {
     me: User! @guard @auth
 }
 
+"Indicates what fields are available at the top level of a mutation operation."
+type Mutation {
+    "Request a sign-in code for an email address."
+    requestAuthenticationCode(input: RequestAuthenticationCodeInput! @spread): RequestAuthenticationCodeResponse!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@requestAuthenticationCode")
+
+    "Verify a sign-in code and create a session."
+    authenticateWithCode(input: AuthenticateWithCodeInput! @spread): AuthenticateWithCodeResponse!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@authenticateWithCode")
+
+    "Log out the currently authenticated session."
+    logout: LogoutResponse!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@logout")
+}
+
+"Input for requesting an authentication code."
+input RequestAuthenticationCodeInput {
+    "Email address to receive the authentication code."
+    email: String! @rules(apply: ["required", "email", "max:255"])
+}
+
+"Input for verifying an authentication code."
+input AuthenticateWithCodeInput {
+    "Email address that requested the authentication code."
+    email: String! @rules(apply: ["required", "email", "max:255"])
+
+    "6-digit numeric authentication code."
+    code: String! @rules(apply: ["required", "regex:/^\\d{6}$/"])
+}
+
+"Response for requesting an authentication code."
+type RequestAuthenticationCodeResponse {
+    ok: Boolean!
+    message: String
+}
+
+"Response for authenticating with an authentication code."
+type AuthenticateWithCodeResponse {
+    ok: Boolean!
+    message: String
+}
+
+"Response for logging out."
+type LogoutResponse {
+    ok: Boolean!
+    message: String
+}
+
 "Account of a person who uses this application."
 type User {
     "Unique primary key."
