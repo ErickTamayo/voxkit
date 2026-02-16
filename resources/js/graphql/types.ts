@@ -16,12 +16,24 @@ export type Scalars = {
   DateTime: { input: any; output: any; }
 };
 
+/** Authentication mode for code-based login. */
+export enum AuthMode {
+  /** Establish a server session for the client. */
+  Session = 'SESSION',
+  /** Return a bearer token in the response. */
+  Token = 'TOKEN'
+}
+
 /** Input for verifying an authentication code. */
 export type AuthenticateWithCodeInput = {
   /** 6-digit numeric authentication code. */
   code: Scalars['String']['input'];
+  /** Optional device label for token creation. */
+  device_name?: InputMaybe<Scalars['String']['input']>;
   /** Email address that requested the authentication code. */
   email: Scalars['String']['input'];
+  /** Auth mode that determines token vs session behavior. */
+  mode?: InputMaybe<AuthMode>;
 };
 
 /** Response for authenticating with an authentication code. */
@@ -29,6 +41,7 @@ export type AuthenticateWithCodeResponse = {
   __typename?: 'AuthenticateWithCodeResponse';
   message?: Maybe<Scalars['String']['output']>;
   ok: Scalars['Boolean']['output'];
+  token?: Maybe<Scalars['String']['output']>;
 };
 
 /** Response for logging out. */
@@ -41,9 +54,9 @@ export type LogoutResponse = {
 /** Indicates what fields are available at the top level of a mutation operation. */
 export type Mutation = {
   __typename?: 'Mutation';
-  /** Verify a sign-in code and create a session. */
+  /** Verify a sign-in code and create a session or token. */
   authenticateWithCode: AuthenticateWithCodeResponse;
-  /** Log out the currently authenticated session. */
+  /** Log out the currently authenticated session or token. */
   logout: LogoutResponse;
   /** Request a sign-in code for an email address. */
   requestAuthenticationCode: RequestAuthenticationCodeResponse;

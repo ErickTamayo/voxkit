@@ -10,9 +10,16 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Laravel\Sanctum\TransientToken;
 
 class AuthCodeMutations
 {
+    private const AUTH_MODE_SESSION = 'SESSION';
+
+    private const AUTH_MODE_TOKEN = 'TOKEN';
+
+    private const DEFAULT_TOKEN_DEVICE_NAME = 'mobile_app';
+
     private const CODE_REQUEST_EMAIL_IP_RATE_LIMIT_ATTEMPTS = 5;
 
     private const CODE_REQUEST_EMAIL_IP_RATE_LIMIT_DECAY_SECONDS = 600;
@@ -69,6 +76,7 @@ class AuthCodeMutations
     public function authenticateWithCode($root, array $args): array
     {
         $email = $this->normalizedEmail($args['email']);
+        $mode = strtoupper((string) ($args['mode'] ?? self::AUTH_MODE_SESSION));
 
         $rateLimitResponse = $this->enforceCodeVerificationRateLimit($email);
         if ($rateLimitResponse !== null) {
@@ -84,6 +92,13 @@ class AuthCodeMutations
 
         $this->clearCodeVerificationRateLimits($email);
 
+        if ($mode === self::AUTH_MODE_TOKEN) {
+            $deviceName = trim((string) ($args['device_name'] ?? self::DEFAULT_TOKEN_DEVICE_NAME));
+            $token = $user->createToken($deviceName !== '' ? $deviceName : self::DEFAULT_TOKEN_DEVICE_NAME)->plainTextToken;
+
+            return $this->okResponse($token);
+        }
+
         Auth::login($user);
 
         if (request()->hasSession()) {
@@ -96,6 +111,14 @@ class AuthCodeMutations
     public function logout(): array
     {
         $request = request();
+        $user = Auth::guard('sanctum')->user();
+
+        if ($user !== null) {
+            $accessToken = $user->currentAccessToken();
+            if ($accessToken !== null && ! ($accessToken instanceof TransientToken)) {
+                $accessToken->delete();
+            }
+        }
 
         if (Auth::guard('web')->check()) {
             Auth::guard('web')->logout();
@@ -111,6 +134,10 @@ class AuthCodeMutations
 
     private function enforceCodeRequestRateLimit(string $email): ?array
     {
+        if (! $this->shouldEnforceRateLimits()) {
+            return null;
+        }
+
         $cooldownKey = $this->codeRequestCooldownRateLimitKey($email);
         if (RateLimiter::tooManyAttempts($cooldownKey, 1)) {
             return $this->rateLimitedResponse('code_request', 'cooldown', $email, $cooldownKey);
@@ -141,6 +168,10 @@ class AuthCodeMutations
 
     private function enforceCodeVerificationRateLimit(string $email): ?array
     {
+        if (! $this->shouldEnforceRateLimits()) {
+            return null;
+        }
+
         $emailIpKey = $this->codeVerificationEmailIpRateLimitKey($email);
         if (RateLimiter::tooManyAttempts($emailIpKey, self::CODE_VERIFY_EMAIL_IP_RATE_LIMIT_ATTEMPTS)) {
             return $this->rateLimitedResponse('code_verify', 'email_ip', $email, $emailIpKey);
@@ -161,6 +192,10 @@ class AuthCodeMutations
 
     private function recordFailedCodeVerificationAttempt(string $email): void
     {
+        if (! $this->shouldEnforceRateLimits()) {
+            return;
+        }
+
         RateLimiter::hit($this->codeVerificationEmailIpRateLimitKey($email), self::CODE_VERIFY_EMAIL_IP_RATE_LIMIT_DECAY_SECONDS);
         RateLimiter::hit($this->codeVerificationEmailRateLimitKey($email), self::CODE_VERIFY_EMAIL_RATE_LIMIT_DECAY_SECONDS);
         RateLimiter::hit($this->codeVerificationIpRateLimitKey(), self::CODE_VERIFY_IP_RATE_LIMIT_DECAY_SECONDS);
@@ -168,8 +203,17 @@ class AuthCodeMutations
 
     private function clearCodeVerificationRateLimits(string $email): void
     {
+        if (! $this->shouldEnforceRateLimits()) {
+            return;
+        }
+
         RateLimiter::clear($this->codeVerificationEmailIpRateLimitKey($email));
         RateLimiter::clear($this->codeVerificationEmailRateLimitKey($email));
+    }
+
+    private function shouldEnforceRateLimits(): bool
+    {
+        return ! app()->isLocal();
     }
 
     private function codeRequestCooldownRateLimitKey(string $email): string
@@ -256,11 +300,12 @@ class AuthCodeMutations
         return $this->errorResponse("Too many attempts. Try again in {$availableIn} seconds.");
     }
 
-    private function okResponse(): array
+    private function okResponse(?string $token = null): array
     {
         return [
             'ok' => true,
             'message' => null,
+            'token' => $token,
         ];
     }
 
@@ -269,6 +314,7 @@ class AuthCodeMutations
         return [
             'ok' => false,
             'message' => $message,
+            'token' => null,
         ];
     }
 }

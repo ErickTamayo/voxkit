@@ -1,16 +1,32 @@
+"Authentication mode for code-based login."
+enum AuthMode {
+  "Establish a server session for the client."
+  SESSION
+
+  "Return a bearer token in the response."
+  TOKEN
+}
+
 "Input for verifying an authentication code."
 input AuthenticateWithCodeInput {
   "6-digit numeric authentication code."
   code: String!
 
+  "Optional device label for token creation."
+  device_name: String
+
   "Email address that requested the authentication code."
   email: String!
+
+  "Auth mode that determines token vs session behavior."
+  mode: AuthMode
 }
 
 "Response for authenticating with an authentication code."
 type AuthenticateWithCodeResponse {
   message: String
   ok: Boolean!
+  token: String
 }
 
 "A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
@@ -24,10 +40,10 @@ type LogoutResponse {
 
 "Indicates what fields are available at the top level of a mutation operation."
 type Mutation {
-  "Verify a sign-in code and create a session."
+  "Verify a sign-in code and create a session or token."
   authenticateWithCode(input: AuthenticateWithCodeInput!): AuthenticateWithCodeResponse!
 
-  "Log out the currently authenticated session."
+  "Log out the currently authenticated session or token."
   logout: LogoutResponse!
 
   "Request a sign-in code for an email address."

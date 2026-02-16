@@ -2,11 +2,14 @@ import { useMutation } from "@apollo/client/react";
 import { useState } from "react";
 import { Redirect, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { clearAuthToken, shouldUseTokenAuth } from "@/lib/authSession";
+import { ensureSessionCsrfCookie } from "@/lib/csrf";
 import { LogoutDocument } from "@/routes/authentication/authentication.graphql.ts";
 import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
 
 export default function AuthenticatedRoute(): React.JSX.Element {
     const [, setLocation] = useLocation();
+    const useTokenAuth = shouldUseTokenAuth();
     const { user, isCheckingSession, refetchSession } = useCurrentUser();
     const [logout, { loading: isLoggingOut }] = useMutation(LogoutDocument);
     const [logoutErrorMessage, setLogoutErrorMessage] = useState<string | null>(null);
@@ -15,12 +18,17 @@ export default function AuthenticatedRoute(): React.JSX.Element {
         setLogoutErrorMessage(null);
 
         try {
+            await ensureSessionCsrfCookie();
             const result = await logout();
             const response = result.data?.logout;
             if (!response?.ok) {
                 setLogoutErrorMessage(response?.message ?? "Failed to log out.");
 
                 return;
+            }
+
+            if (useTokenAuth) {
+                clearAuthToken();
             }
 
             await refetchSession();

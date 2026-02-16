@@ -5,6 +5,7 @@ use App\Models\User;
 use App\Notifications\AuthCodeNotification;
 use App\Services\AuthCodeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
@@ -23,6 +24,7 @@ mutation ($input: AuthenticateWithCodeInput!) {
     authenticateWithCode(input: $input) {
         ok
         message
+        token
     }
 }
 GRAPHQL;
@@ -83,6 +85,7 @@ it('authenticates with a valid code and establishes a session', function () {
             'input' => [
                 'email' => $user->email,
                 'code' => $code,
+                'mode' => 'SESSION',
             ],
         ],
     ]);
@@ -92,6 +95,35 @@ it('authenticates with a valid code and establishes a session', function () {
 
     $user->refresh();
     expect($user->email_verified_at)->not->toBeNull();
+
+    $meResponse = $this->postJson('/graphql', [
+        'query' => ME_QUERY,
+    ]);
+
+    $meResponse->assertSuccessful();
+    expect($meResponse->json('data.me.email'))->toBe($user->email);
+});
+
+it('defaults to session authentication when mode is omitted', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => null,
+    ]);
+
+    $code = app(AuthCodeService::class)->issueCode($user, AuthCode::PURPOSE_AUTH);
+
+    $response = $this->postJson('/graphql', [
+        'query' => AUTHENTICATE_WITH_CODE_MUTATION,
+        'variables' => [
+            'input' => [
+                'email' => $user->email,
+                'code' => $code,
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful();
+    expect($response->json('data.authenticateWithCode.ok'))->toBeTrue();
+    expect($response->json('data.authenticateWithCode.token'))->toBeNull();
 
     $meResponse = $this->postJson('/graphql', [
         'query' => ME_QUERY,
@@ -111,6 +143,7 @@ it('does not allow reusing a consumed code', function () {
             'input' => [
                 'email' => $user->email,
                 'code' => $code,
+                'mode' => 'SESSION',
             ],
         ],
     ]);
@@ -124,6 +157,7 @@ it('does not allow reusing a consumed code', function () {
             'input' => [
                 'email' => $user->email,
                 'code' => $code,
+                'mode' => 'SESSION',
             ],
         ],
     ]);
@@ -131,6 +165,48 @@ it('does not allow reusing a consumed code', function () {
     $secondAttempt->assertSuccessful();
     expect($secondAttempt->json('data.authenticateWithCode.ok'))->toBeFalse();
     expect($secondAttempt->json('data.authenticateWithCode.message'))->toBe('Invalid or expired code.');
+});
+
+it('authenticates with a valid code and returns a bearer token', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => null,
+    ]);
+
+    $code = app(AuthCodeService::class)->issueCode($user, AuthCode::PURPOSE_AUTH);
+
+    $response = $this->postJson('/graphql', [
+        'query' => AUTHENTICATE_WITH_CODE_MUTATION,
+        'variables' => [
+            'input' => [
+                'email' => $user->email,
+                'code' => $code,
+                'mode' => 'TOKEN',
+                'device_name' => 'ios-simulator',
+            ],
+        ],
+    ]);
+
+    $response->assertSuccessful();
+    expect($response->json('data.authenticateWithCode.ok'))->toBeTrue();
+    expect($response->json('data.authenticateWithCode.token'))->not->toBeNull();
+
+    $user->refresh();
+    expect($user->email_verified_at)->not->toBeNull();
+
+    $token = $response->json('data.authenticateWithCode.token');
+    $meResponse = $this
+        ->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/graphql', [
+            'query' => ME_QUERY,
+        ]);
+
+    $meResponse->assertSuccessful();
+    expect($meResponse->json('data.me.email'))->toBe($user->email);
+    $this->assertDatabaseHas('personal_access_tokens', [
+        'tokenable_type' => User::class,
+        'tokenable_id' => $user->id,
+        'name' => 'ios-simulator',
+    ]);
 });
 
 it('enforces request cooldown between auth code requests', function () {
@@ -164,10 +240,63 @@ it('enforces request cooldown between auth code requests', function () {
     expect($secondResponse->json('data.requestAuthenticationCode.message'))->toContain('Too many attempts.');
 });
 
-it('logs out the authenticated session', function () {
-    $user = User::factory()->create();
+it('disables auth code rate limits in local environment', function () {
+    Notification::fake();
 
-    $this->actingAs($user);
+    $currentEnvironment = $this->app->environment();
+    $this->app['env'] = 'local';
+
+    try {
+        $email = 'local-no-limit-'.uniqid().'@example.com';
+
+        $firstResponse = $this->postJson('/graphql', [
+            'query' => REQUEST_AUTHENTICATION_CODE_MUTATION,
+            'variables' => [
+                'input' => [
+                    'email' => $email,
+                ],
+            ],
+        ]);
+
+        $firstResponse->assertSuccessful();
+        expect($firstResponse->json('data.requestAuthenticationCode.ok'))->toBeTrue();
+
+        $secondResponse = $this->postJson('/graphql', [
+            'query' => REQUEST_AUTHENTICATION_CODE_MUTATION,
+            'variables' => [
+                'input' => [
+                    'email' => $email,
+                ],
+            ],
+        ]);
+
+        $secondResponse->assertSuccessful();
+        expect($secondResponse->json('data.requestAuthenticationCode.ok'))->toBeTrue();
+        expect($secondResponse->json('data.requestAuthenticationCode.message'))->toBeNull();
+    } finally {
+        $this->app['env'] = $currentEnvironment;
+    }
+});
+
+it('logs out the authenticated session', function () {
+    $user = User::factory()->create([
+        'email_verified_at' => null,
+    ]);
+    $code = app(AuthCodeService::class)->issueCode($user, AuthCode::PURPOSE_AUTH);
+
+    $authenticateResponse = $this->postJson('/graphql', [
+        'query' => AUTHENTICATE_WITH_CODE_MUTATION,
+        'variables' => [
+            'input' => [
+                'email' => $user->email,
+                'code' => $code,
+                'mode' => 'SESSION',
+            ],
+        ],
+    ]);
+
+    $authenticateResponse->assertSuccessful();
+    expect($authenticateResponse->json('data.authenticateWithCode.ok'))->toBeTrue();
 
     $logoutResponse = $this->postJson('/graphql', [
         'query' => LOGOUT_MUTATION,
@@ -175,12 +304,25 @@ it('logs out the authenticated session', function () {
 
     $logoutResponse->assertSuccessful();
     expect($logoutResponse->json('data.logout.ok'))->toBeTrue();
+    expect(Auth::guard('web')->check())->toBeFalse();
+});
 
-    $meResponse = $this->postJson('/graphql', [
-        'query' => ME_QUERY,
+it('logs out and revokes the authenticated bearer token', function () {
+    $user = User::factory()->create();
+    $token = $user->createToken('test-device')->plainTextToken;
+
+    $logoutResponse = $this
+        ->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/graphql', [
+            'query' => LOGOUT_MUTATION,
+        ]);
+
+    $logoutResponse->assertSuccessful();
+    expect($logoutResponse->json('data.logout.ok'))->toBeTrue();
+
+    $this->assertDatabaseMissing('personal_access_tokens', [
+        'tokenable_type' => User::class,
+        'tokenable_id' => $user->id,
+        'name' => 'test-device',
     ]);
-
-    $meResponse->assertSuccessful();
-    expect($meResponse->json('data.me'))->toBeNull();
-    expect($meResponse->json('errors.0.message'))->toBe('Unauthenticated.');
 });

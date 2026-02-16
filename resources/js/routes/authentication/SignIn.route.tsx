@@ -4,6 +4,7 @@ import { Redirect, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ensureSessionCsrfCookie } from "@/lib/csrf";
 import { RequestAuthenticationCodeDocument } from "@/routes/authentication/authentication.graphql.ts";
 import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
 
@@ -20,6 +21,7 @@ export default function SignInRoute(): React.JSX.Element {
 
         try {
             const normalizedEmail = email.trim().toLowerCase();
+            await ensureSessionCsrfCookie();
             const result = await requestCode({
                 variables: {
                     input: { email: normalizedEmail },

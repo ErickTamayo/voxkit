@@ -4,8 +4,11 @@ import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useState } from "react";
 import { Redirect, useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
+import { AuthMode } from "@/graphql/types";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import { MeDocument } from "@/graphql/root.graphql.ts";
+import { shouldUseTokenAuth, writeAuthToken } from "@/lib/authSession";
+import { ensureSessionCsrfCookie } from "@/lib/csrf";
 import {
     AuthenticateWithCodeDocument,
     RequestAuthenticationCodeDocument,
@@ -15,6 +18,7 @@ import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
 export default function VerifyCodeRoute(): React.JSX.Element {
     const params = useParams<{ email: string }>();
     const emailForCode = params?.email ? decodeURIComponent(params.email) : null;
+    const useTokenAuth = shouldUseTokenAuth();
     const [code, setCode] = useState("");
     const [verifyErrorMessage, setVerifyErrorMessage] = useState<string | null>(null);
     const [, setLocation] = useLocation();
@@ -41,11 +45,14 @@ export default function VerifyCodeRoute(): React.JSX.Element {
         setVerifyErrorMessage(null);
 
         try {
+            await ensureSessionCsrfCookie();
             const result = await authenticateWithCode({
                 variables: {
                     input: {
                         email: emailForCode,
                         code,
+                        mode: useTokenAuth ? AuthMode.Token : AuthMode.Session,
+                        ...(useTokenAuth ? { device_name: "capacitor_app" } : {}),
                     },
                 },
             });
@@ -56,6 +63,20 @@ export default function VerifyCodeRoute(): React.JSX.Element {
                 setCode("");
 
                 return;
+            }
+
+            if (useTokenAuth) {
+                const token = response.token;
+                if (typeof token !== "string" || token.length === 0) {
+                    setVerifyErrorMessage("Authentication token was not returned.");
+                    setCode("");
+
+                    return;
+                }
+
+                writeAuthToken(token);
+            } else {
+                await ensureSessionCsrfCookie({ forceRefresh: true });
             }
 
             await apolloClient.refetchQueries({
@@ -78,6 +99,7 @@ export default function VerifyCodeRoute(): React.JSX.Element {
         setVerifyErrorMessage(null);
 
         try {
+            await ensureSessionCsrfCookie();
             const result = await requestCode({
                 variables: {
                     input: { email: emailForCode },

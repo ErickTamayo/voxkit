@@ -1,6 +1,15 @@
 "A datetime string with format `Y-m-d H:i:s`, e.g. `2018-05-23 13:43:32`."
 scalar DateTime @scalar(class: "Nuwave\\Lighthouse\\Schema\\Types\\Scalars\\DateTime")
 
+"Authentication mode for code-based login."
+enum AuthMode {
+    "Establish a server session for the client."
+    SESSION
+
+    "Return a bearer token in the response."
+    TOKEN
+}
+
 "Indicates what fields are available at the top level of a query operation."
 type Query {
     "Return the currently authenticated user."
@@ -13,11 +22,11 @@ type Mutation {
     requestAuthenticationCode(input: RequestAuthenticationCodeInput! @spread): RequestAuthenticationCodeResponse!
         @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@requestAuthenticationCode")
 
-    "Verify a sign-in code and create a session."
+    "Verify a sign-in code and create a session or token."
     authenticateWithCode(input: AuthenticateWithCodeInput! @spread): AuthenticateWithCodeResponse!
         @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@authenticateWithCode")
 
-    "Log out the currently authenticated session."
+    "Log out the currently authenticated session or token."
     logout: LogoutResponse!
         @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@logout")
 }
@@ -35,6 +44,12 @@ input AuthenticateWithCodeInput {
 
     "6-digit numeric authentication code."
     code: String! @rules(apply: ["required", "regex:/^\\d{6}$/"])
+
+    "Auth mode that determines token vs session behavior."
+    mode: AuthMode
+
+    "Optional device label for token creation."
+    device_name: String @rules(apply: ["sometimes", "string", "max:255"])
 }
 
 "Response for requesting an authentication code."
@@ -47,6 +62,7 @@ type RequestAuthenticationCodeResponse {
 type AuthenticateWithCodeResponse {
     ok: Boolean!
     message: String
+    token: String
 }
 
 "Response for logging out."

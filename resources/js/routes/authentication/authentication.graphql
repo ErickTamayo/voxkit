@@ -9,6 +9,7 @@ mutation AuthenticateWithCode($input: AuthenticateWithCodeInput!) {
     authenticateWithCode(input: $input) {
         ok
         message
+        token
     }
 }
 
