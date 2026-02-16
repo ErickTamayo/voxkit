@@ -13,8 +13,14 @@ uses(RefreshDatabase::class);
 const REQUEST_AUTHENTICATION_CODE_MUTATION = <<<'GRAPHQL'
 mutation ($input: RequestAuthenticationCodeInput!) {
     requestAuthenticationCode(input: $input) {
-        ok
-        message
+        __typename
+        ... on RequestAuthenticationCodeSuccess {
+            message
+        }
+        ... on AuthenticationRateLimitError {
+            message
+            retry_after_seconds
+        }
     }
 }
 GRAPHQL;
@@ -22,9 +28,21 @@ GRAPHQL;
 const AUTHENTICATE_WITH_CODE_MUTATION = <<<'GRAPHQL'
 mutation ($input: AuthenticateWithCodeInput!) {
     authenticateWithCode(input: $input) {
-        ok
-        message
-        token
+        __typename
+        ... on AuthenticateWithCodeSessionSuccess {
+            message
+        }
+        ... on AuthenticateWithCodeTokenSuccess {
+            message
+            token
+        }
+        ... on AuthenticateWithCodeInvalidCodeError {
+            message
+        }
+        ... on AuthenticationRateLimitError {
+            message
+            retry_after_seconds
+        }
     }
 }
 GRAPHQL;
@@ -32,7 +50,6 @@ GRAPHQL;
 const LOGOUT_MUTATION = <<<'GRAPHQL'
 mutation {
     logout {
-        ok
         message
     }
 }
@@ -60,7 +77,7 @@ it('requests an authentication code and creates the user when missing', function
     ]);
 
     $response->assertSuccessful();
-    expect($response->json('data.requestAuthenticationCode.ok'))->toBeTrue();
+    expect($response->json('data.requestAuthenticationCode.__typename'))->toBe('RequestAuthenticationCodeSuccess');
 
     $user = User::query()->where('email', 'new-user@example.com')->first();
     expect($user)->not->toBeNull();
@@ -91,7 +108,7 @@ it('authenticates with a valid code and establishes a session', function () {
     ]);
 
     $response->assertSuccessful();
-    expect($response->json('data.authenticateWithCode.ok'))->toBeTrue();
+    expect($response->json('data.authenticateWithCode.__typename'))->toBe('AuthenticateWithCodeSessionSuccess');
 
     $user->refresh();
     expect($user->email_verified_at)->not->toBeNull();
@@ -122,8 +139,7 @@ it('defaults to session authentication when mode is omitted', function () {
     ]);
 
     $response->assertSuccessful();
-    expect($response->json('data.authenticateWithCode.ok'))->toBeTrue();
-    expect($response->json('data.authenticateWithCode.token'))->toBeNull();
+    expect($response->json('data.authenticateWithCode.__typename'))->toBe('AuthenticateWithCodeSessionSuccess');
 
     $meResponse = $this->postJson('/graphql', [
         'query' => ME_QUERY,
@@ -149,7 +165,7 @@ it('does not allow reusing a consumed code', function () {
     ]);
 
     $firstAttempt->assertSuccessful();
-    expect($firstAttempt->json('data.authenticateWithCode.ok'))->toBeTrue();
+    expect($firstAttempt->json('data.authenticateWithCode.__typename'))->toBe('AuthenticateWithCodeSessionSuccess');
 
     $secondAttempt = $this->postJson('/graphql', [
         'query' => AUTHENTICATE_WITH_CODE_MUTATION,
@@ -163,7 +179,7 @@ it('does not allow reusing a consumed code', function () {
     ]);
 
     $secondAttempt->assertSuccessful();
-    expect($secondAttempt->json('data.authenticateWithCode.ok'))->toBeFalse();
+    expect($secondAttempt->json('data.authenticateWithCode.__typename'))->toBe('AuthenticateWithCodeInvalidCodeError');
     expect($secondAttempt->json('data.authenticateWithCode.message'))->toBe('Invalid or expired code.');
 });
 
@@ -187,7 +203,7 @@ it('authenticates with a valid code and returns a bearer token', function () {
     ]);
 
     $response->assertSuccessful();
-    expect($response->json('data.authenticateWithCode.ok'))->toBeTrue();
+    expect($response->json('data.authenticateWithCode.__typename'))->toBe('AuthenticateWithCodeTokenSuccess');
     expect($response->json('data.authenticateWithCode.token'))->not->toBeNull();
 
     $user->refresh();
@@ -224,7 +240,7 @@ it('enforces request cooldown between auth code requests', function () {
     ]);
 
     $firstResponse->assertSuccessful();
-    expect($firstResponse->json('data.requestAuthenticationCode.ok'))->toBeTrue();
+    expect($firstResponse->json('data.requestAuthenticationCode.__typename'))->toBe('RequestAuthenticationCodeSuccess');
 
     $secondResponse = $this->postJson('/graphql', [
         'query' => REQUEST_AUTHENTICATION_CODE_MUTATION,
@@ -236,7 +252,7 @@ it('enforces request cooldown between auth code requests', function () {
     ]);
 
     $secondResponse->assertSuccessful();
-    expect($secondResponse->json('data.requestAuthenticationCode.ok'))->toBeFalse();
+    expect($secondResponse->json('data.requestAuthenticationCode.__typename'))->toBe('AuthenticationRateLimitError');
     expect($secondResponse->json('data.requestAuthenticationCode.message'))->toContain('Too many attempts.');
 });
 
@@ -259,7 +275,7 @@ it('disables auth code rate limits in local environment', function () {
         ]);
 
         $firstResponse->assertSuccessful();
-        expect($firstResponse->json('data.requestAuthenticationCode.ok'))->toBeTrue();
+        expect($firstResponse->json('data.requestAuthenticationCode.__typename'))->toBe('RequestAuthenticationCodeSuccess');
 
         $secondResponse = $this->postJson('/graphql', [
             'query' => REQUEST_AUTHENTICATION_CODE_MUTATION,
@@ -271,8 +287,8 @@ it('disables auth code rate limits in local environment', function () {
         ]);
 
         $secondResponse->assertSuccessful();
-        expect($secondResponse->json('data.requestAuthenticationCode.ok'))->toBeTrue();
-        expect($secondResponse->json('data.requestAuthenticationCode.message'))->toBeNull();
+        expect($secondResponse->json('data.requestAuthenticationCode.__typename'))->toBe('RequestAuthenticationCodeSuccess');
+        expect($secondResponse->json('data.requestAuthenticationCode.message'))->toBe('Authentication code sent.');
     } finally {
         $this->app['env'] = $currentEnvironment;
     }
@@ -296,14 +312,14 @@ it('logs out the authenticated session', function () {
     ]);
 
     $authenticateResponse->assertSuccessful();
-    expect($authenticateResponse->json('data.authenticateWithCode.ok'))->toBeTrue();
+    expect($authenticateResponse->json('data.authenticateWithCode.__typename'))->toBe('AuthenticateWithCodeSessionSuccess');
 
     $logoutResponse = $this->postJson('/graphql', [
         'query' => LOGOUT_MUTATION,
     ]);
 
     $logoutResponse->assertSuccessful();
-    expect($logoutResponse->json('data.logout.ok'))->toBeTrue();
+    expect($logoutResponse->json('data.logout.message'))->toBe('Logged out.');
     expect(Auth::guard('web')->check())->toBeFalse();
 });
 
@@ -318,7 +334,7 @@ it('logs out and revokes the authenticated bearer token', function () {
         ]);
 
     $logoutResponse->assertSuccessful();
-    expect($logoutResponse->json('data.logout.ok'))->toBeTrue();
+    expect($logoutResponse->json('data.logout.message'))->toBe('Logged out.');
 
     $this->assertDatabaseMissing('personal_access_tokens', [
         'tokenable_type' => User::class,

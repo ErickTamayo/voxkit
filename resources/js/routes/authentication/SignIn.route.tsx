@@ -4,7 +4,6 @@ import { Redirect, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ensureSessionCsrfCookie } from "@/lib/csrf";
 import { RequestAuthenticationCodeDocument } from "@/routes/authentication/authentication.graphql.ts";
 import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
 
@@ -12,7 +11,7 @@ export default function SignInRoute(): React.JSX.Element {
     const [email, setEmail] = useState("test@example.com");
     const [requestErrorMessage, setRequestErrorMessage] = useState<string | null>(null);
     const [, setLocation] = useLocation();
-    const { user, isCheckingSession } = useCurrentUser();
+    const { user } = useCurrentUser();
     const [requestCode, { loading: isRequestingCode }] = useMutation(RequestAuthenticationCodeDocument);
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
@@ -21,7 +20,6 @@ export default function SignInRoute(): React.JSX.Element {
 
         try {
             const normalizedEmail = email.trim().toLowerCase();
-            await ensureSessionCsrfCookie();
             const result = await requestCode({
                 variables: {
                     input: { email: normalizedEmail },
@@ -29,20 +27,21 @@ export default function SignInRoute(): React.JSX.Element {
             });
 
             const response = result.data?.requestAuthenticationCode;
-            if (!response?.ok) {
-                setRequestErrorMessage(response?.message ?? "Failed to send code.");
+            switch (response?.__typename) {
+                case "RequestAuthenticationCodeSuccess":
+                    setLocation(`/verify/${encodeURIComponent(normalizedEmail)}`);
 
-                return;
+                    return;
+                case "AuthenticationRateLimitError":
+                    setRequestErrorMessage(response.message);
+
+                    return;
+                default:
+                    setRequestErrorMessage("Failed to send code.");
             }
-
-            setLocation(`/verify/${encodeURIComponent(normalizedEmail)}`);
         } catch (error) {
             setRequestErrorMessage(error instanceof Error ? error.message : "Failed to send code.");
         }
-    }
-
-    if (isCheckingSession) {
-        return <p className="text-sm text-muted-foreground">Checking your session...</p>;
     }
 
     if (user !== null) {

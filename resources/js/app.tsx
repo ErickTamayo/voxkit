@@ -19,7 +19,7 @@ const AuthenticatedRoute = lazy(
 function App(): React.JSX.Element {
     return (
         <ApolloProvider client={apolloClient}>
-            <Suspense>
+            <Suspense fallback={<p className="px-4 py-6 text-sm text-muted-foreground">Loading...</p>}>
                 <Switch>
                     <RouteWithLayout path="/" component={HomeRoute} />
                     <RouteWithLayout

@@ -2,6 +2,7 @@ import { ApolloClient, InMemoryCache } from "@apollo/client";
 import { BatchHttpLink } from "@apollo/client/link/batch-http";
 import { SetContextLink } from "@apollo/client/link/context";
 import { readAuthToken, shouldUseTokenAuth } from "@/lib/authSession";
+import { ensureSessionCsrfCookie } from "@/lib/csrf";
 
 const LOCALHOST_ALIASES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 const DEFAULT_API_URL = "http://localhost:8000";
@@ -63,6 +64,7 @@ const httpLink = new BatchHttpLink({
 
 const authLink = new SetContextLink(async (prevContext) => {
     if (!shouldUseTokenAuth()) {
+        await ensureSessionCsrfCookie();
         const xsrfToken = getXsrfToken();
 
         return {

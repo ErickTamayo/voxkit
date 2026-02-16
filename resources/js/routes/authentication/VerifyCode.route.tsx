@@ -8,7 +8,6 @@ import { AuthMode } from "@/graphql/types";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import { MeDocument } from "@/graphql/root.graphql.ts";
 import { shouldUseTokenAuth, writeAuthToken } from "@/lib/authSession";
-import { ensureSessionCsrfCookie } from "@/lib/csrf";
 import {
     AuthenticateWithCodeDocument,
     RequestAuthenticationCodeDocument,
@@ -23,7 +22,7 @@ export default function VerifyCodeRoute(): React.JSX.Element {
     const [verifyErrorMessage, setVerifyErrorMessage] = useState<string | null>(null);
     const [, setLocation] = useLocation();
     const apolloClient = useApolloClient();
-    const { user, isCheckingSession } = useCurrentUser();
+    const { user } = useCurrentUser();
     const [requestCode, { loading: isRequestingCode }] = useMutation(RequestAuthenticationCodeDocument);
     const [authenticateWithCode, { loading: isVerifyingCode }] = useMutation(AuthenticateWithCodeDocument);
 
@@ -45,7 +44,6 @@ export default function VerifyCodeRoute(): React.JSX.Element {
         setVerifyErrorMessage(null);
 
         try {
-            await ensureSessionCsrfCookie();
             const result = await authenticateWithCode({
                 variables: {
                     input: {
@@ -58,25 +56,36 @@ export default function VerifyCodeRoute(): React.JSX.Element {
             });
 
             const response = result.data?.authenticateWithCode;
-            if (!response?.ok) {
-                setVerifyErrorMessage(response?.message ?? "Invalid or expired code.");
-                setCode("");
-
-                return;
-            }
-
-            if (useTokenAuth) {
-                const token = response.token;
-                if (typeof token !== "string" || token.length === 0) {
-                    setVerifyErrorMessage("Authentication token was not returned.");
+            switch (response?.__typename) {
+                case "AuthenticateWithCodeInvalidCodeError":
+                case "AuthenticationRateLimitError":
+                    setVerifyErrorMessage(response.message);
                     setCode("");
 
                     return;
-                }
+                case "AuthenticateWithCodeTokenSuccess":
+                    if (!useTokenAuth) {
+                        setVerifyErrorMessage("Unexpected authentication response.");
+                        setCode("");
 
-                writeAuthToken(token);
-            } else {
-                await ensureSessionCsrfCookie({ forceRefresh: true });
+                        return;
+                    }
+
+                    writeAuthToken(response.token);
+                    break;
+                case "AuthenticateWithCodeSessionSuccess":
+                    if (useTokenAuth) {
+                        setVerifyErrorMessage("Authentication token was not returned.");
+                        setCode("");
+
+                        return;
+                    }
+                    break;
+                default:
+                    setVerifyErrorMessage("Invalid or expired code.");
+                    setCode("");
+
+                    return;
             }
 
             await apolloClient.refetchQueries({
@@ -99,7 +108,6 @@ export default function VerifyCodeRoute(): React.JSX.Element {
         setVerifyErrorMessage(null);
 
         try {
-            await ensureSessionCsrfCookie();
             const result = await requestCode({
                 variables: {
                     input: { email: emailForCode },
@@ -107,13 +115,18 @@ export default function VerifyCodeRoute(): React.JSX.Element {
             });
 
             const response = result.data?.requestAuthenticationCode;
-            if (!response?.ok) {
-                setVerifyErrorMessage(response?.message ?? "Failed to resend code.");
+            switch (response?.__typename) {
+                case "RequestAuthenticationCodeSuccess":
+                    setCode("");
 
-                return;
+                    return;
+                case "AuthenticationRateLimitError":
+                    setVerifyErrorMessage(response.message);
+
+                    return;
+                default:
+                    setVerifyErrorMessage("Failed to resend code.");
             }
-
-            setCode("");
         } catch (error) {
             setVerifyErrorMessage(error instanceof Error ? error.message : "Failed to resend code.");
         }
@@ -121,10 +134,6 @@ export default function VerifyCodeRoute(): React.JSX.Element {
 
     if (emailForCode === null) {
         return <Redirect to="/signin" />;
-    }
-
-    if (isCheckingSession) {
-        return <p className="text-sm text-muted-foreground">Checking your session...</p>;
     }
 
     if (user !== null) {

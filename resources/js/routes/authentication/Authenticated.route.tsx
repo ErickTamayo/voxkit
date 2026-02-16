@@ -3,14 +3,13 @@ import { useState } from "react";
 import { Redirect, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { clearAuthToken, shouldUseTokenAuth } from "@/lib/authSession";
-import { ensureSessionCsrfCookie } from "@/lib/csrf";
 import { LogoutDocument } from "@/routes/authentication/authentication.graphql.ts";
 import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
 
 export default function AuthenticatedRoute(): React.JSX.Element {
     const [, setLocation] = useLocation();
     const useTokenAuth = shouldUseTokenAuth();
-    const { user, isCheckingSession, refetchSession } = useCurrentUser();
+    const { user, refetchSession } = useCurrentUser();
     const [logout, { loading: isLoggingOut }] = useMutation(LogoutDocument);
     const [logoutErrorMessage, setLogoutErrorMessage] = useState<string | null>(null);
 
@@ -18,11 +17,10 @@ export default function AuthenticatedRoute(): React.JSX.Element {
         setLogoutErrorMessage(null);
 
         try {
-            await ensureSessionCsrfCookie();
             const result = await logout();
             const response = result.data?.logout;
-            if (!response?.ok) {
-                setLogoutErrorMessage(response?.message ?? "Failed to log out.");
+            if (!response) {
+                setLogoutErrorMessage("Failed to log out.");
 
                 return;
             }
@@ -36,10 +34,6 @@ export default function AuthenticatedRoute(): React.JSX.Element {
         } catch (error) {
             setLogoutErrorMessage(error instanceof Error ? error.message : "Failed to log out.");
         }
-    }
-
-    if (isCheckingSession) {
-        return <p className="text-sm text-muted-foreground">Checking your session...</p>;
     }
 
     if (user === null) {

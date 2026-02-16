@@ -1,21 +1,38 @@
 mutation RequestAuthenticationCode($input: RequestAuthenticationCodeInput!) {
     requestAuthenticationCode(input: $input) {
-        ok
-        message
+        __typename
+        ... on RequestAuthenticationCodeSuccess {
+            message
+        }
+        ... on AuthenticationRateLimitError {
+            message
+            retry_after_seconds
+        }
     }
 }
 
 mutation AuthenticateWithCode($input: AuthenticateWithCodeInput!) {
     authenticateWithCode(input: $input) {
-        ok
-        message
-        token
+        __typename
+        ... on AuthenticateWithCodeSessionSuccess {
+            message
+        }
+        ... on AuthenticateWithCodeTokenSuccess {
+            message
+            token
+        }
+        ... on AuthenticateWithCodeInvalidCodeError {
+            message
+        }
+        ... on AuthenticationRateLimitError {
+            message
+            retry_after_seconds
+        }
     }
 }
 
 mutation Logout {
     logout {
-        ok
         message
     }
 }

@@ -6,10 +6,6 @@ const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
 let csrfCookieRequestPromise: Promise<void> | null = null;
 let csrfCookieInitialized = false;
 
-type EnsureSessionCsrfCookieOptions = {
-    forceRefresh?: boolean;
-};
-
 function isLocalhostAlias(hostname: string): boolean {
     return LOCALHOST_ALIASES.has(hostname.toLowerCase());
 }
@@ -40,12 +36,12 @@ function resolveApiBaseUrl(apiBaseUrl?: string): string {
     }
 }
 
-export async function ensureSessionCsrfCookie(options?: EnsureSessionCsrfCookieOptions): Promise<void> {
+export async function ensureSessionCsrfCookie(): Promise<void> {
     if (shouldUseTokenAuth()) {
         return;
     }
 
-    if (!options?.forceRefresh && csrfCookieInitialized) {
+    if (csrfCookieInitialized) {
         return;
     }
 

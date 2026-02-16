@@ -52,23 +52,48 @@ input AuthenticateWithCodeInput {
     device_name: String @rules(apply: ["sometimes", "string", "max:255"])
 }
 
-"Response for requesting an authentication code."
-type RequestAuthenticationCodeResponse {
-    ok: Boolean!
-    message: String
+"Authentication code request succeeded."
+type RequestAuthenticationCodeSuccess {
+    message: String!
 }
 
-"Response for authenticating with an authentication code."
-type AuthenticateWithCodeResponse {
-    ok: Boolean!
-    message: String
-    token: String
+"Authentication succeeded with a server session."
+type AuthenticateWithCodeSessionSuccess {
+    message: String!
 }
+
+"Authentication succeeded with a bearer token."
+type AuthenticateWithCodeTokenSuccess {
+    message: String!
+    token: String!
+}
+
+"Authentication failed because the code is invalid or expired."
+type AuthenticateWithCodeInvalidCodeError {
+    message: String!
+}
+
+"Authentication failed because a rate limit was exceeded."
+type AuthenticationRateLimitError {
+    message: String!
+    retry_after_seconds: Int!
+}
+
+"Response for requesting an authentication code."
+union RequestAuthenticationCodeResponse =
+      RequestAuthenticationCodeSuccess
+    | AuthenticationRateLimitError
+
+"Response for authenticating with an authentication code."
+union AuthenticateWithCodeResponse =
+      AuthenticateWithCodeSessionSuccess
+    | AuthenticateWithCodeTokenSuccess
+    | AuthenticateWithCodeInvalidCodeError
+    | AuthenticationRateLimitError
 
 "Response for logging out."
 type LogoutResponse {
-    ok: Boolean!
-    message: String
+    message: String!
 }
 
 "Account of a person who uses this application."

@@ -36,19 +36,39 @@ export type AuthenticateWithCodeInput = {
   mode?: InputMaybe<AuthMode>;
 };
 
+/** Authentication failed because the code is invalid or expired. */
+export type AuthenticateWithCodeInvalidCodeError = {
+  __typename?: 'AuthenticateWithCodeInvalidCodeError';
+  message: Scalars['String']['output'];
+};
+
 /** Response for authenticating with an authentication code. */
-export type AuthenticateWithCodeResponse = {
-  __typename?: 'AuthenticateWithCodeResponse';
-  message?: Maybe<Scalars['String']['output']>;
-  ok: Scalars['Boolean']['output'];
-  token?: Maybe<Scalars['String']['output']>;
+export type AuthenticateWithCodeResponse = AuthenticateWithCodeInvalidCodeError | AuthenticateWithCodeSessionSuccess | AuthenticateWithCodeTokenSuccess | AuthenticationRateLimitError;
+
+/** Authentication succeeded with a server session. */
+export type AuthenticateWithCodeSessionSuccess = {
+  __typename?: 'AuthenticateWithCodeSessionSuccess';
+  message: Scalars['String']['output'];
+};
+
+/** Authentication succeeded with a bearer token. */
+export type AuthenticateWithCodeTokenSuccess = {
+  __typename?: 'AuthenticateWithCodeTokenSuccess';
+  message: Scalars['String']['output'];
+  token: Scalars['String']['output'];
+};
+
+/** Authentication failed because a rate limit was exceeded. */
+export type AuthenticationRateLimitError = {
+  __typename?: 'AuthenticationRateLimitError';
+  message: Scalars['String']['output'];
+  retry_after_seconds: Scalars['Int']['output'];
 };
 
 /** Response for logging out. */
 export type LogoutResponse = {
   __typename?: 'LogoutResponse';
-  message?: Maybe<Scalars['String']['output']>;
-  ok: Scalars['Boolean']['output'];
+  message: Scalars['String']['output'];
 };
 
 /** Indicates what fields are available at the top level of a mutation operation. */
@@ -116,10 +136,12 @@ export type RequestAuthenticationCodeInput = {
 };
 
 /** Response for requesting an authentication code. */
-export type RequestAuthenticationCodeResponse = {
-  __typename?: 'RequestAuthenticationCodeResponse';
-  message?: Maybe<Scalars['String']['output']>;
-  ok: Scalars['Boolean']['output'];
+export type RequestAuthenticationCodeResponse = AuthenticationRateLimitError | RequestAuthenticationCodeSuccess;
+
+/** Authentication code request succeeded. */
+export type RequestAuthenticationCodeSuccess = {
+  __typename?: 'RequestAuthenticationCodeSuccess';
+  message: Scalars['String']['output'];
 };
 
 /** Directions for ordering a list of records. */

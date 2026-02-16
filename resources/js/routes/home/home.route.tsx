@@ -4,15 +4,7 @@ import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
 
 export default function HomeRoute(): React.JSX.Element {
     const [, setLocation] = useLocation();
-    const { user, isCheckingSession } = useCurrentUser();
-
-    if (isCheckingSession) {
-        return (
-            <main className="grid min-h-screen place-items-center bg-muted p-6">
-                <p className="text-sm text-muted-foreground">Checking your session...</p>
-            </main>
-        );
-    }
+    const { user } = useCurrentUser();
 
     return (
         <main className="grid min-h-screen place-items-center bg-muted p-6">
