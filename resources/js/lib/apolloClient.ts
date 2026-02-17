@@ -1,8 +1,12 @@
 import { ApolloClient, InMemoryCache } from "@apollo/client";
 import { BatchHttpLink } from "@apollo/client/link/batch-http";
 import { SetContextLink } from "@apollo/client/link/context";
-import { readAuthToken, shouldUseTokenAuth } from "@/lib/authSession";
+import { ErrorLink } from "@apollo/client/link/error";
+import { clearAuthToken, readAuthToken } from "@/lib/authSession";
+import { isUnauthenticatedError } from "@/lib/authErrors";
+import { redirectToSignInFromAuthError } from "@/lib/authRedirect";
 import { ensureSessionCsrfCookie } from "@/lib/csrf";
+import { setSessionUnauthenticated } from "@/stores/sessionStore";
 
 const LOCALHOST_ALIASES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 const DEFAULT_API_URL = "http://localhost:8000";
@@ -13,10 +17,6 @@ function isLocalhostAlias(hostname: string): boolean {
 }
 
 function resolveApiBaseUrl(apiBaseUrl?: string): string {
-    if (typeof window === "undefined") {
-        return (apiBaseUrl ?? DEFAULT_API_URL).replace(/\/+$/, "");
-    }
-
     try {
         const resolvedApiUrl = typeof apiBaseUrl === "string" && apiBaseUrl.trim() !== ""
             ? apiBaseUrl
@@ -38,10 +38,6 @@ function resolveApiBaseUrl(apiBaseUrl?: string): string {
 }
 
 function getXsrfToken(): string | null {
-    if (typeof document === "undefined") {
-        return null;
-    }
-
     const tokenCookie = document.cookie
         .split(";")
         .map((value) => value.trim())
@@ -62,30 +58,46 @@ const httpLink = new BatchHttpLink({
     batchMax: 10,
 });
 
-const authLink = new SetContextLink(async (prevContext) => {
-    if (!shouldUseTokenAuth()) {
-        await ensureSessionCsrfCookie();
-        const xsrfToken = getXsrfToken();
+const AUTH_ERROR_IGNORED_OPERATIONS = new Set([
+    "RequestAuthenticationCode",
+    "AuthenticateWithCode",
+    "Logout",
+]);
 
-        return {
-            headers: {
-                ...prevContext.headers,
-                ...(xsrfToken !== null ? { "X-XSRF-TOKEN": xsrfToken } : {}),
-            },
-        };
+async function handleUnauthenticatedTransportError(): Promise<void> {
+    await clearAuthToken();
+    setSessionUnauthenticated();
+    redirectToSignInFromAuthError();
+}
+
+const transportErrorLink = new ErrorLink(({ error, operation }) => {
+    const operationName = operation.operationName;
+    if (operationName !== undefined && AUTH_ERROR_IGNORED_OPERATIONS.has(operationName)) {
+        return;
     }
 
-    const token = readAuthToken();
+    if (!isUnauthenticatedError(error)) {
+        return;
+    }
+
+    void handleUnauthenticatedTransportError();
+});
+
+const authLink = new SetContextLink(async (prevContext) => {
+    await ensureSessionCsrfCookie();
+    const xsrfToken = getXsrfToken();
+    const token = await readAuthToken();
 
     return {
         headers: {
             ...prevContext.headers,
+            ...(xsrfToken !== null ? { "X-XSRF-TOKEN": xsrfToken } : {}),
             ...(token !== null ? { Authorization: `Bearer ${token}` } : {}),
         },
     };
 });
 
 export const apolloClient = new ApolloClient({
-    link: authLink.concat(httpLink),
+    link: authLink.concat(transportErrorLink).concat(httpLink),
     cache: new InMemoryCache(),
 });

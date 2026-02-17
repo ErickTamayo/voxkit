@@ -1,39 +1,45 @@
 import { Capacitor } from "@capacitor/core";
+import { SecureStoragePlugin } from "capacitor-secure-storage-plugin";
 
 const AUTH_TOKEN_STORAGE_KEY = "auth_token";
 
-function hasWindow(): boolean {
-    return typeof window !== "undefined";
-}
-
 export function shouldUseTokenAuth(): boolean {
-    if (!hasWindow()) {
-        return false;
-    }
-
     return Capacitor.isNativePlatform();
 }
 
-export function readAuthToken(): string | null {
-    if (!hasWindow()) {
+export async function readAuthToken(): Promise<string | null> {
+    if (!shouldUseTokenAuth()) {
         return null;
     }
 
-    return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+    try {
+        const result = await SecureStoragePlugin.get({ key: AUTH_TOKEN_STORAGE_KEY });
+
+        return result.value;
+    } catch {
+        return null;
+    }
 }
 
-export function writeAuthToken(token: string): void {
-    if (!hasWindow()) {
+export async function writeAuthToken(token: string): Promise<void> {
+    if (!shouldUseTokenAuth()) {
         return;
     }
 
-    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token);
+    await SecureStoragePlugin.set({
+        key: AUTH_TOKEN_STORAGE_KEY,
+        value: token,
+    });
 }
 
-export function clearAuthToken(): void {
-    if (!hasWindow()) {
+export async function clearAuthToken(): Promise<void> {
+    if (!shouldUseTokenAuth()) {
         return;
     }
 
-    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+    try {
+        await SecureStoragePlugin.remove({ key: AUTH_TOKEN_STORAGE_KEY });
+    } catch {
+        // Ignore missing token errors to keep logout/idempotent clear flows resilient.
+    }
 }

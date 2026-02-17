@@ -1,5 +1,3 @@
-import { shouldUseTokenAuth } from "@/lib/authSession";
-
 const LOCALHOST_ALIASES = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
 const DEFAULT_API_URL = "http://localhost:8000";
 const API_BASE_URL = resolveApiBaseUrl(import.meta.env.VITE_API_URL);
@@ -11,10 +9,6 @@ function isLocalhostAlias(hostname: string): boolean {
 }
 
 function resolveApiBaseUrl(apiBaseUrl?: string): string {
-    if (typeof window === "undefined") {
-        return apiBaseUrl ?? DEFAULT_API_URL;
-    }
-
     const resolvedApiBaseUrl = typeof apiBaseUrl === "string" && apiBaseUrl.trim() !== ""
         ? apiBaseUrl
         : DEFAULT_API_URL;
@@ -37,10 +31,6 @@ function resolveApiBaseUrl(apiBaseUrl?: string): string {
 }
 
 export async function ensureSessionCsrfCookie(): Promise<void> {
-    if (shouldUseTokenAuth()) {
-        return;
-    }
-
     if (csrfCookieInitialized) {
         return;
     }

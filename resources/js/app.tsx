@@ -3,6 +3,7 @@ import { ApolloProvider } from "@apollo/client/react";
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { Redirect, Route, Switch } from "wouter";
+import { AuthenticatedRoute } from "@/components/AuthenticatedRoute";
 import { RouteWithLayout } from "@/components/RouteWithLayout";
 import { apolloClient } from "@/lib/apolloClient";
 import { AuthenticationCardLayout } from "@/routes/authentication/layouts/AuthenticationCard.layout";
@@ -12,7 +13,7 @@ const SignInRoute = lazy(() => import("@/routes/authentication/SignIn.route"));
 const VerifyCodeRoute = lazy(
     () => import("@/routes/authentication/VerifyCode.route"),
 );
-const AuthenticatedRoute = lazy(
+const AccountRoute = lazy(
     () => import("@/routes/authentication/Authenticated.route"),
 );
 
@@ -32,9 +33,9 @@ function App(): React.JSX.Element {
                         component={VerifyCodeRoute}
                         layouts={[AuthenticationCardLayout]}
                     />
-                    <RouteWithLayout
+                    <AuthenticatedRoute
                         path="/account"
-                        component={AuthenticatedRoute}
+                        component={AccountRoute}
                         layouts={[AuthenticationCardLayout]}
                     />
                     <Route>

@@ -1,30 +1,23 @@
-import { useApolloClient } from "@apollo/client/react";
-import { useMutation } from "@apollo/client/react";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { useState } from "react";
 import { Redirect, useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
-import { AuthMode } from "@/graphql/types";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
-import { MeDocument } from "@/graphql/root.graphql.ts";
-import { shouldUseTokenAuth, writeAuthToken } from "@/lib/authSession";
-import {
-    AuthenticateWithCodeDocument,
-    RequestAuthenticationCodeDocument,
-} from "@/routes/authentication/authentication.graphql.ts";
-import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
+import { useSession } from "@/hooks/useSession";
 
 export default function VerifyCodeRoute(): React.JSX.Element {
     const params = useParams<{ email: string }>();
     const emailForCode = params?.email ? decodeURIComponent(params.email) : null;
-    const useTokenAuth = shouldUseTokenAuth();
     const [code, setCode] = useState("");
     const [verifyErrorMessage, setVerifyErrorMessage] = useState<string | null>(null);
     const [, setLocation] = useLocation();
-    const apolloClient = useApolloClient();
-    const { user } = useCurrentUser();
-    const [requestCode, { loading: isRequestingCode }] = useMutation(RequestAuthenticationCodeDocument);
-    const [authenticateWithCode, { loading: isVerifyingCode }] = useMutation(AuthenticateWithCodeDocument);
+    const {
+        authenticateWithCode,
+        isAuthenticatingWithCode,
+        isRequestingAuthenticationCode,
+        requestAuthenticationCode,
+        status,
+    } = useSession();
 
     const hasCompleteCode = code.length === 6;
 
@@ -45,52 +38,16 @@ export default function VerifyCodeRoute(): React.JSX.Element {
 
         try {
             const result = await authenticateWithCode({
-                variables: {
-                    input: {
-                        email: emailForCode,
-                        code,
-                        mode: useTokenAuth ? AuthMode.Token : AuthMode.Session,
-                        ...(useTokenAuth ? { device_name: "capacitor_app" } : {}),
-                    },
-                },
+                email: emailForCode,
+                code,
             });
+            if (!result.ok) {
+                setVerifyErrorMessage(result.errorMessage ?? "Invalid or expired code.");
+                setCode("");
 
-            const response = result.data?.authenticateWithCode;
-            switch (response?.__typename) {
-                case "AuthenticateWithCodeInvalidCodeError":
-                case "AuthenticationRateLimitError":
-                    setVerifyErrorMessage(response.message);
-                    setCode("");
-
-                    return;
-                case "AuthenticateWithCodeTokenSuccess":
-                    if (!useTokenAuth) {
-                        setVerifyErrorMessage("Unexpected authentication response.");
-                        setCode("");
-
-                        return;
-                    }
-
-                    writeAuthToken(response.token);
-                    break;
-                case "AuthenticateWithCodeSessionSuccess":
-                    if (useTokenAuth) {
-                        setVerifyErrorMessage("Authentication token was not returned.");
-                        setCode("");
-
-                        return;
-                    }
-                    break;
-                default:
-                    setVerifyErrorMessage("Invalid or expired code.");
-                    setCode("");
-
-                    return;
+                return;
             }
 
-            await apolloClient.refetchQueries({
-                include: [MeDocument],
-            });
             setLocation("/account");
         } catch (error) {
             setVerifyErrorMessage(error instanceof Error ? error.message : "Invalid code.");
@@ -108,25 +65,14 @@ export default function VerifyCodeRoute(): React.JSX.Element {
         setVerifyErrorMessage(null);
 
         try {
-            const result = await requestCode({
-                variables: {
-                    input: { email: emailForCode },
-                },
-            });
+            const result = await requestAuthenticationCode(emailForCode);
+            if (result.ok) {
+                setCode("");
 
-            const response = result.data?.requestAuthenticationCode;
-            switch (response?.__typename) {
-                case "RequestAuthenticationCodeSuccess":
-                    setCode("");
-
-                    return;
-                case "AuthenticationRateLimitError":
-                    setVerifyErrorMessage(response.message);
-
-                    return;
-                default:
-                    setVerifyErrorMessage("Failed to resend code.");
+                return;
             }
+
+            setVerifyErrorMessage(result.errorMessage ?? "Failed to resend code.");
         } catch (error) {
             setVerifyErrorMessage(error instanceof Error ? error.message : "Failed to resend code.");
         }
@@ -136,7 +82,7 @@ export default function VerifyCodeRoute(): React.JSX.Element {
         return <Redirect to="/signin" />;
     }
 
-    if (user !== null) {
+    if (status === "authenticated") {
         return <Redirect to="/account" />;
     }
 
@@ -175,11 +121,11 @@ export default function VerifyCodeRoute(): React.JSX.Element {
             </div>
 
             <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={() => void handleVerifyCode()} disabled={!hasCompleteCode || isVerifyingCode}>
-                    {isVerifyingCode ? "Verifying..." : "Verify code"}
+                <Button type="button" onClick={() => void handleVerifyCode()} disabled={!hasCompleteCode || isAuthenticatingWithCode}>
+                    {isAuthenticatingWithCode ? "Verifying..." : "Verify code"}
                 </Button>
-                <Button type="button" variant="secondary" onClick={() => void handleResendCode()} disabled={isRequestingCode}>
-                    {isRequestingCode ? "Resending..." : "Resend code"}
+                <Button type="button" variant="secondary" onClick={() => void handleResendCode()} disabled={isRequestingAuthenticationCode}>
+                    {isRequestingAuthenticationCode ? "Resending..." : "Resend code"}
                 </Button>
                 <Button
                     type="button"

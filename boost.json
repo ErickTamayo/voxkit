@@ -11,6 +11,9 @@
     "sail": false,
     "skills": [
         "pest-testing",
-        "tailwindcss-development"
+        "tailwindcss-development",
+        "graphql-operation-colocation",
+        "i18n-patterns",
+        "ui-component-patterns"
     ]
 }

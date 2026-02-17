@@ -1,18 +1,19 @@
-import { useMutation } from "@apollo/client/react";
 import { type FormEvent, useState } from "react";
 import { Redirect, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RequestAuthenticationCodeDocument } from "@/routes/authentication/authentication.graphql.ts";
-import { useCurrentUser } from "@/routes/authentication/hooks/useCurrentUser";
+import { useSession } from "@/hooks/useSession";
 
 export default function SignInRoute(): React.JSX.Element {
     const [email, setEmail] = useState("test@example.com");
     const [requestErrorMessage, setRequestErrorMessage] = useState<string | null>(null);
     const [, setLocation] = useLocation();
-    const { user } = useCurrentUser();
-    const [requestCode, { loading: isRequestingCode }] = useMutation(RequestAuthenticationCodeDocument);
+    const {
+        isRequestingAuthenticationCode,
+        requestAuthenticationCode,
+        status,
+    } = useSession();
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
         event.preventDefault();
@@ -20,31 +21,20 @@ export default function SignInRoute(): React.JSX.Element {
 
         try {
             const normalizedEmail = email.trim().toLowerCase();
-            const result = await requestCode({
-                variables: {
-                    input: { email: normalizedEmail },
-                },
-            });
+            const result = await requestAuthenticationCode(normalizedEmail);
+            if (result.ok) {
+                setLocation(`/verify/${encodeURIComponent(normalizedEmail)}`);
 
-            const response = result.data?.requestAuthenticationCode;
-            switch (response?.__typename) {
-                case "RequestAuthenticationCodeSuccess":
-                    setLocation(`/verify/${encodeURIComponent(normalizedEmail)}`);
-
-                    return;
-                case "AuthenticationRateLimitError":
-                    setRequestErrorMessage(response.message);
-
-                    return;
-                default:
-                    setRequestErrorMessage("Failed to send code.");
+                return;
             }
+
+            setRequestErrorMessage(result.errorMessage ?? "Failed to send code.");
         } catch (error) {
             setRequestErrorMessage(error instanceof Error ? error.message : "Failed to send code.");
         }
     }
 
-    if (user !== null) {
+    if (status === "authenticated") {
         return <Redirect to="/account" />;
     }
 
@@ -69,8 +59,8 @@ export default function SignInRoute(): React.JSX.Element {
                 />
             </div>
 
-            <Button type="submit" disabled={isRequestingCode}>
-                {isRequestingCode ? "Sending code..." : "Send code"}
+            <Button type="submit" disabled={isRequestingAuthenticationCode}>
+                {isRequestingAuthenticationCode ? "Sending code..." : "Send code"}
             </Button>
         </form>
     );
