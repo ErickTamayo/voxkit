@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\AuthCode;
@@ -16,16 +18,6 @@ class AuthenticationService
     public const AUTH_MODE_SESSION = 'SESSION';
 
     public const AUTH_MODE_TOKEN = 'TOKEN';
-
-    public const REQUEST_RESULT_CODE_SENT = 'code_sent';
-
-    public const RESULT_RATE_LIMITED = 'rate_limited';
-
-    public const AUTHENTICATION_RESULT_INVALID_CODE = 'invalid_code';
-
-    public const AUTHENTICATION_RESULT_SESSION = 'session_authenticated';
-
-    public const AUTHENTICATION_RESULT_TOKEN = 'token_authenticated';
 
     private const DEFAULT_TOKEN_DEVICE_NAME = 'mobile_app';
 
@@ -59,14 +51,11 @@ class AuthenticationService
         private readonly AuthCodeService $authCodeService
     ) {}
 
-    public function requestAuthenticationCode(string $email): array
+    public function requestAuthenticationCode(string $email): void
     {
         $normalizedEmail = $this->normalizedEmail($email);
 
-        $rateLimitResponse = $this->enforceCodeRequestRateLimit($normalizedEmail);
-        if ($rateLimitResponse !== null) {
-            return $rateLimitResponse;
-        }
+        $this->enforceCodeRequestRateLimit($normalizedEmail);
 
         $user = User::query()->firstOrCreate(
             ['email' => $normalizedEmail],
@@ -78,41 +67,28 @@ class AuthenticationService
 
         $code = $this->authCodeService->issueCode($user, AuthCode::PURPOSE_AUTH);
         $user->notify(new AuthCodeNotification($code));
-
-        return [
-            'status' => self::REQUEST_RESULT_CODE_SENT,
-        ];
     }
 
-    public function authenticateWithCode(string $email, string $code, ?string $mode = null, ?string $deviceName = null): array
+    public function authenticateWithCode(string $email, string $code, ?string $mode = null, ?string $deviceName = null): ?string
     {
         $normalizedEmail = $this->normalizedEmail($email);
         $authMode = strtoupper((string) ($mode ?? self::AUTH_MODE_SESSION));
 
-        $rateLimitResponse = $this->enforceCodeVerificationRateLimit($normalizedEmail);
-        if ($rateLimitResponse !== null) {
-            return $rateLimitResponse;
-        }
+        $this->enforceCodeVerificationRateLimit($normalizedEmail);
 
         $user = $this->authCodeService->consumeCode($normalizedEmail, AuthCode::PURPOSE_AUTH, $code);
-        if (! $user) {
+        if ($user === null) {
             $this->recordFailedCodeVerificationAttempt($normalizedEmail);
 
-            return [
-                'status' => self::AUTHENTICATION_RESULT_INVALID_CODE,
-            ];
+            throw new InvalidAuthenticationCodeException;
         }
 
         $this->clearCodeVerificationRateLimits($normalizedEmail);
 
         if ($authMode === self::AUTH_MODE_TOKEN) {
             $resolvedDeviceName = trim((string) ($deviceName ?? self::DEFAULT_TOKEN_DEVICE_NAME));
-            $token = $user->createToken($resolvedDeviceName !== '' ? $resolvedDeviceName : self::DEFAULT_TOKEN_DEVICE_NAME)->plainTextToken;
 
-            return [
-                'status' => self::AUTHENTICATION_RESULT_TOKEN,
-                'token' => $token,
-            ];
+            return $user->createToken($resolvedDeviceName !== '' ? $resolvedDeviceName : self::DEFAULT_TOKEN_DEVICE_NAME)->plainTextToken;
         }
 
         Auth::login($user);
@@ -121,9 +97,7 @@ class AuthenticationService
             request()->session()->regenerate();
         }
 
-        return [
-            'status' => self::AUTHENTICATION_RESULT_SESSION,
-        ];
+        return null;
     }
 
     public function logout(): void
@@ -146,65 +120,60 @@ class AuthenticationService
                 $request->session()->regenerateToken();
             }
         }
-
     }
 
-    private function enforceCodeRequestRateLimit(string $email): ?array
+    private function enforceCodeRequestRateLimit(string $email): void
     {
         if (! $this->shouldEnforceRateLimits()) {
-            return null;
+            return;
         }
 
         $cooldownKey = $this->codeRequestCooldownRateLimitKey($email);
         if (RateLimiter::tooManyAttempts($cooldownKey, 1)) {
-            return $this->rateLimitedResult('code_request', 'cooldown', $email, $cooldownKey);
+            $this->throwRateLimited('code_request', 'cooldown', $email, $cooldownKey);
         }
 
         $emailIpKey = $this->codeRequestEmailIpRateLimitKey($email);
         if (RateLimiter::tooManyAttempts($emailIpKey, self::CODE_REQUEST_EMAIL_IP_RATE_LIMIT_ATTEMPTS)) {
-            return $this->rateLimitedResult('code_request', 'email_ip', $email, $emailIpKey);
+            $this->throwRateLimited('code_request', 'email_ip', $email, $emailIpKey);
         }
 
         $emailKey = $this->codeRequestEmailRateLimitKey($email);
         if (RateLimiter::tooManyAttempts($emailKey, self::CODE_REQUEST_EMAIL_RATE_LIMIT_ATTEMPTS)) {
-            return $this->rateLimitedResult('code_request', 'email', $email, $emailKey);
+            $this->throwRateLimited('code_request', 'email', $email, $emailKey);
         }
 
         $ipKey = $this->codeRequestIpRateLimitKey();
         if (RateLimiter::tooManyAttempts($ipKey, self::CODE_REQUEST_IP_RATE_LIMIT_ATTEMPTS)) {
-            return $this->rateLimitedResult('code_request', 'ip', $email, $ipKey);
+            $this->throwRateLimited('code_request', 'ip', $email, $ipKey);
         }
 
         RateLimiter::hit($cooldownKey, self::CODE_REQUEST_COOLDOWN_SECONDS);
         RateLimiter::hit($emailIpKey, self::CODE_REQUEST_EMAIL_IP_RATE_LIMIT_DECAY_SECONDS);
         RateLimiter::hit($emailKey, self::CODE_REQUEST_EMAIL_RATE_LIMIT_DECAY_SECONDS);
         RateLimiter::hit($ipKey, self::CODE_REQUEST_IP_RATE_LIMIT_DECAY_SECONDS);
-
-        return null;
     }
 
-    private function enforceCodeVerificationRateLimit(string $email): ?array
+    private function enforceCodeVerificationRateLimit(string $email): void
     {
         if (! $this->shouldEnforceRateLimits()) {
-            return null;
+            return;
         }
 
         $emailIpKey = $this->codeVerificationEmailIpRateLimitKey($email);
         if (RateLimiter::tooManyAttempts($emailIpKey, self::CODE_VERIFY_EMAIL_IP_RATE_LIMIT_ATTEMPTS)) {
-            return $this->rateLimitedResult('code_verify', 'email_ip', $email, $emailIpKey);
+            $this->throwRateLimited('code_verify', 'email_ip', $email, $emailIpKey);
         }
 
         $emailKey = $this->codeVerificationEmailRateLimitKey($email);
         if (RateLimiter::tooManyAttempts($emailKey, self::CODE_VERIFY_EMAIL_RATE_LIMIT_ATTEMPTS)) {
-            return $this->rateLimitedResult('code_verify', 'email', $email, $emailKey);
+            $this->throwRateLimited('code_verify', 'email', $email, $emailKey);
         }
 
         $ipKey = $this->codeVerificationIpRateLimitKey();
         if (RateLimiter::tooManyAttempts($ipKey, self::CODE_VERIFY_IP_RATE_LIMIT_ATTEMPTS)) {
-            return $this->rateLimitedResult('code_verify', 'ip', $email, $ipKey);
+            $this->throwRateLimited('code_verify', 'ip', $email, $ipKey);
         }
-
-        return null;
     }
 
     private function recordFailedCodeVerificationAttempt(string $email): void
@@ -302,7 +271,7 @@ class AuthenticationService
         return request()->ip() ?? 'unknown';
     }
 
-    private function rateLimitedResult(string $flow, string $scope, string $email, string $rateLimitKey): array
+    private function throwRateLimited(string $flow, string $scope, string $email, string $rateLimitKey): never
     {
         $availableIn = max(RateLimiter::availableIn($rateLimitKey), 1);
 
@@ -314,9 +283,6 @@ class AuthenticationService
             'email_hash' => hash('sha256', $email),
         ]);
 
-        return [
-            'status' => self::RESULT_RATE_LIMITED,
-            'retry_after_seconds' => $availableIn,
-        ];
+        throw new AuthenticationRateLimitedException($availableIn);
     }
 }

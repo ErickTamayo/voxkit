@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\GraphQL\Mutations;
 
+use App\Services\AuthenticationRateLimitedException;
 use App\Services\AuthenticationService;
-use RuntimeException;
+use App\Services\InvalidAuthenticationCodeException;
 
 class AuthCodeMutations
 {
@@ -13,52 +16,48 @@ class AuthCodeMutations
 
     public function requestAuthenticationCode(mixed $root, array $args): array
     {
-        $result = $this->authenticationService->requestAuthenticationCode($args['email']);
+        try {
+            $this->authenticationService->requestAuthenticationCode($args['email']);
+        } catch (AuthenticationRateLimitedException $exception) {
+            return $this->rateLimitErrorPayload($exception->retryAfterSeconds);
+        }
 
-        return match ($result['status']) {
-            AuthenticationService::REQUEST_RESULT_CODE_SENT => [
-                '__typename' => 'RequestAuthenticationCodeSuccess',
-                'message' => 'Authentication code sent.',
-            ],
-            AuthenticationService::RESULT_RATE_LIMITED => [
-                '__typename' => 'AuthenticationRateLimitError',
-                'message' => "Too many attempts. Try again in {$result['retry_after_seconds']} seconds.",
-                'retry_after_seconds' => $result['retry_after_seconds'],
-            ],
-            default => throw new RuntimeException('Unsupported request authentication code result status.'),
-        };
+        return [
+            '__typename' => 'RequestAuthenticationCodeSuccess',
+            'message' => 'Authentication code sent.',
+        ];
     }
 
     public function authenticateWithCode(mixed $root, array $args): array
     {
-        $result = $this->authenticationService->authenticateWithCode(
-            $args['email'],
-            $args['code'],
-            $args['mode'] ?? AuthenticationService::AUTH_MODE_SESSION,
-            $args['device_name'] ?? null,
-        );
-
-        return match ($result['status']) {
-            AuthenticationService::AUTHENTICATION_RESULT_SESSION => [
-                '__typename' => 'AuthenticateWithCodeSessionSuccess',
-                'message' => 'Authenticated.',
-            ],
-            AuthenticationService::AUTHENTICATION_RESULT_TOKEN => [
-                '__typename' => 'AuthenticateWithCodeTokenSuccess',
-                'message' => 'Authenticated.',
-                'token' => $result['token'],
-            ],
-            AuthenticationService::AUTHENTICATION_RESULT_INVALID_CODE => [
+        try {
+            $token = $this->authenticationService->authenticateWithCode(
+                $args['email'],
+                $args['code'],
+                $args['mode'] ?? AuthenticationService::AUTH_MODE_SESSION,
+                $args['device_name'] ?? null,
+            );
+        } catch (InvalidAuthenticationCodeException) {
+            return [
                 '__typename' => 'AuthenticateWithCodeInvalidCodeError',
                 'message' => 'Invalid or expired code.',
-            ],
-            AuthenticationService::RESULT_RATE_LIMITED => [
-                '__typename' => 'AuthenticationRateLimitError',
-                'message' => "Too many attempts. Try again in {$result['retry_after_seconds']} seconds.",
-                'retry_after_seconds' => $result['retry_after_seconds'],
-            ],
-            default => throw new RuntimeException('Unsupported authenticate with code result status.'),
-        };
+            ];
+        } catch (AuthenticationRateLimitedException $exception) {
+            return $this->rateLimitErrorPayload($exception->retryAfterSeconds);
+        }
+
+        if ($token !== null) {
+            return [
+                '__typename' => 'AuthenticateWithCodeTokenSuccess',
+                'message' => 'Authenticated.',
+                'token' => $token,
+            ];
+        }
+
+        return [
+            '__typename' => 'AuthenticateWithCodeSessionSuccess',
+            'message' => 'Authenticated.',
+        ];
     }
 
     public function logout(): array
@@ -67,6 +66,15 @@ class AuthCodeMutations
 
         return [
             'message' => 'Logged out.',
+        ];
+    }
+
+    private function rateLimitErrorPayload(int $retryAfterSeconds): array
+    {
+        return [
+            '__typename' => 'AuthenticationRateLimitError',
+            'message' => "Too many attempts. Try again in {$retryAfterSeconds} seconds.",
+            'retry_after_seconds' => $retryAfterSeconds,
         ];
     }
 }

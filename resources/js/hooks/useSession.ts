@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useEffect } from "react";
 import { AuthMode } from "@/graphql/types";
-import { MeDocument } from "@/graphql/root.graphql.ts";
+import { MeDocument } from "@/hooks/useUser.graphql.ts";
 import {
     clearAuthToken,
     shouldUseTokenAuth,

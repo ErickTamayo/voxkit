@@ -1,6 +1,6 @@
 import { useSuspenseQuery } from "@apollo/client/react";
-import type { MeQuery } from "@/graphql/root.graphql.ts";
-import { MeDocument } from "@/graphql/root.graphql.ts";
+import type { MeQuery } from "@/hooks/useUser.graphql.ts";
+import { MeDocument } from "@/hooks/useUser.graphql.ts";
 
 export function useUser(): {
     user: MeQuery["me"];

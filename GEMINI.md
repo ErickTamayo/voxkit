@@ -27,8 +27,18 @@ This application is a Laravel application and its main Laravel ecosystems packag
 
 This project has domain-specific skills available. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
 
-- `pest-testing` — Tests applications using the Pest 4 PHP framework. Activates when writing tests, creating unit or feature tests, adding assertions, testing Livewire components, browser testing, debugging test failures, working with datasets or mocking; or when the user mentions test, spec, TDD, expects, assertion, coverage, or needs to verify functionality works.
-- `tailwindcss-development` — Styles applications using Tailwind CSS v4 utilities. Activates when adding styles, restyling components, working with gradients, spacing, layout, flex, grid, responsive design, dark mode, colors, typography, or borders; or when the user mentions CSS, styling, classes, Tailwind, restyle, hero section, cards, buttons, or any visual/UI changes.
+- `laravel-backend-core` — Core Laravel and PHP conventions for backend structure, validation, testing, and formatting.
+- `boost-mcp-workflow` — Required Laravel Boost MCP workflow for tool selection and docs lookup.
+- `service-layer-pattern` — Thin transport edges with service-layer orchestration and exception-first behavior.
+- `graphql-lighthouse-pattern` — Schema-first Lighthouse GraphQL conventions with explicit validation and authorization.
+- `dto-validation-patterns` — Transport-boundary validation and payload mapping patterns for REST/GraphQL inputs.
+- `pest-testing` — Pest 4 testing patterns and execution workflow.
+- `testing-with-pest-graphql` — Deterministic backend GraphQL feature-testing patterns.
+- `tailwindcss-development` — Tailwind CSS v4 styling patterns and migration-safe utilities.
+- `graphql-operation-colocation` — Colocated GraphQL operation and typed codegen workflow.
+- `i18n-patterns` — i18n key strategy, interpolation, and translation boundaries.
+- `ui-component-patterns` — Reusable UI component extraction and composition conventions.
+- `testing-with-msw-vitest` — Vitest + MSW frontend testing patterns for API-backed UI behavior.
 
 ## Conventions
 

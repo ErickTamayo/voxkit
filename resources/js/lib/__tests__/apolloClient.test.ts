@@ -72,7 +72,7 @@ describe("apolloClient transport", () => {
 
         const [{ apolloClient }, { MeDocument }, { Capacitor }] = await Promise.all([
             import("@/lib/apolloClient"),
-            import("@/graphql/root.graphql.ts"),
+            import("@/hooks/useUser.graphql.ts"),
             import("@capacitor/core"),
         ]);
         vi.spyOn(Capacitor, "isNativePlatform").mockReturnValue(false);
@@ -124,7 +124,7 @@ describe("apolloClient transport", () => {
 
         const [{ apolloClient }, { MeDocument }] = await Promise.all([
             import("@/lib/apolloClient"),
-            import("@/graphql/root.graphql.ts"),
+            import("@/hooks/useUser.graphql.ts"),
         ]);
 
         await apolloClient.query({

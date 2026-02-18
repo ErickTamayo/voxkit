@@ -10,8 +10,15 @@
     "mcp": true,
     "sail": false,
     "skills": [
+        "boost-mcp-workflow",
+        "dto-validation-patterns",
+        "graphql-lighthouse-pattern",
+        "laravel-backend-core",
         "pest-testing",
+        "service-layer-pattern",
         "tailwindcss-development",
+        "testing-with-msw-vitest",
+        "testing-with-pest-graphql",
         "graphql-operation-colocation",
         "i18n-patterns",
         "ui-component-patterns"
