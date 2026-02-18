@@ -64,6 +64,9 @@ Follow this workflow when adding or updating GraphQL-backed UI.
 ## Query integration standards
 
 - Use `useSuspenseQuery` for Apollo queries (do not introduce `useQuery` loading branches).
+- The only exception is when a query is used in a non-Suspense context, such the session hook. 
+- If there's ambiguity, before suggesting it, explain why `useQuery` needs to be used in the Suspense context.
+- There's a top Suspense context that handles loading. Ideally, all queries should be able to use `useSuspenseQuery`.
 - Keep loading and error handling aligned with current route-level boundaries.
 - Keep auth/session transport behavior in shared client utilities (`resources/js/lib/apolloClient.ts`).
 
