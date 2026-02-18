@@ -1,32 +1,15 @@
-const AUTH_ROUTE_PATHS = ["/signin"];
-const AUTH_ROUTE_PREFIXES = ["/verify/"];
-const PROTECTED_ROUTE_PATHS = ["/account"];
+import { isPrivateRoutePath } from "@/lib/privateRoutes";
+
 const REDIRECT_COOLDOWN_MS = 500;
 
 let isRedirectInFlight = false;
 let lastRedirectAt = 0;
 
-function isAuthRoutePath(pathname: string): boolean {
-    if (AUTH_ROUTE_PATHS.includes(pathname)) {
-        return true;
-    }
-
-    return AUTH_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
-}
-
-function isProtectedRoutePath(pathname: string): boolean {
-    return PROTECTED_ROUTE_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
-}
-
 export function redirectToSignInFromAuthError(): void {
     const now = Date.now();
     const currentPathname = window.location.pathname;
 
-    if (isAuthRoutePath(currentPathname)) {
-        return;
-    }
-
-    if (!isProtectedRoutePath(currentPathname)) {
+    if (!isPrivateRoutePath(currentPathname)) {
         return;
     }
 
