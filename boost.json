@@ -5,7 +5,7 @@
         "codex",
         "gemini"
     ],
-    "guidelines": true,
+    "guidelines": false,
     "herd_mcp": false,
     "mcp": true,
     "sail": false,
