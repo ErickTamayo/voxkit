@@ -55,7 +55,7 @@ Follow this workflow when adding or updating GraphQL-backed UI.
 - Use this pair pattern:
   - `Feature.graphql`
   - `Feature.graphql.ts` (generated)
-- Base generated schema types live in `src/graphql/types.ts`.
+- Base generated schema types live in `resources/js/graphql/types.ts`.
 
 ## Commands
 
@@ -64,10 +64,12 @@ Follow this workflow when adding or updating GraphQL-backed UI.
 ## Query integration standards
 
 - Use `useSuspenseQuery` for Apollo queries (do not introduce `useQuery` loading branches).
-- Wrap data-driven screens with `Suspense` + `ErrorBoundary` and keep fetch logic in a `ScreenNameContent` component.
-- Keep loading and error UI in dedicated components (for example `ScreenLoading`, `ScreenErrorBoundary`).
+- Keep loading and error handling aligned with current route-level boundaries.
+- Keep auth/session transport behavior in shared client utilities (`resources/js/lib/apolloClient.ts`).
 
 ## Shared user/settings data
 
 - Reuse shared hooks for common user/session settings instead of duplicating query logic.
-- Example shared user query hook: `src/hooks/useUser.ts`.
+- Example shared user query hook: `resources/js/hooks/useUser.ts`.
+
+For repository-specific paths and command conventions, read `references/project-conventions.md`.

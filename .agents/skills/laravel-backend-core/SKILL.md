@@ -19,6 +19,8 @@ Apply this skill when working on backend PHP/Laravel code, migrations, validatio
 - Use constructor property promotion when appropriate.
 - Avoid empty public constructors with no parameters.
 - Prefer PHPDoc for meaningful type/context notes (including useful array shapes).
+- For new or substantially edited PHP classes, include `declare(strict_types=1);`.
+- Never use emoji characters in logs, comments, or code.
 
 ## Laravel Implementation Rules
 
@@ -32,6 +34,8 @@ Apply this skill when working on backend PHP/Laravel code, migrations, validatio
 - Use built-in auth/authorization features (policies, gates, Sanctum).
 - Use queued jobs (`ShouldQueue`) for time-consuming tasks.
 - Never use `env()` outside config files; use `config()` in app code.
+- Keep controllers and GraphQL resolver/mutation classes thin; move orchestration-heavy logic to `app/Services/`.
+- Prefer exception-first error handling in services; do not use tuple-style error returns.
 
 ## Laravel 12 Structure
 
@@ -48,7 +52,10 @@ Apply this skill when working on backend PHP/Laravel code, migrations, validatio
 - Use factories and existing factory states for test data setup.
 - Do not remove tests without explicit approval.
 - Do not add ad-hoc verification scripts when tests can prove behavior.
+- For GraphQL changes, update tests in `tests/Feature/GraphQL/` in the same change.
 
 ## Formatting
 
 - Run `vendor/bin/pint --dirty --format agent` before finalizing PHP changes.
+
+For repository-specific examples and anti-pattern reminders, read `references/project-conventions.md`.

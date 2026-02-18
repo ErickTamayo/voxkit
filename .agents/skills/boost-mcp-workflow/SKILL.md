@@ -16,6 +16,7 @@ Apply this skill when using Laravel Boost tools, inspecting Laravel package docs
 - Use `database-query` for read-only SQL checks.
 - Use `database-schema` before migration/model work that depends on column/index details.
 - Use `browser-logs` for recent frontend JavaScript errors and browser exceptions.
+- Prefer `application-info` early in each session for package-version context.
 
 ## Documentation Search Requirements
 
@@ -36,3 +37,6 @@ Apply this skill when using Laravel Boost tools, inspecting Laravel package docs
 - Prefer Boost tooling over ad-hoc shell/database probing when equivalent tooling exists.
 - Keep logs and query checks focused on the smallest scope needed.
 - Treat stale browser logs as low-value unless they are reproducible and recent.
+- When guidance conflicts appear, follow project skills and local conventions first, then verify with `search-docs`.
+
+For project-specific tool habits and command patterns, read `references/project-conventions.md`.

@@ -40,6 +40,7 @@ Follow this workflow when implementing or refactoring UI components.
 - Confirm accessibility roles/labels for interactive UI.
 - Confirm import paths stay direct and explicit.
 - Confirm no accidental barrel-export patterns were introduced.
+- Confirm route/component files do not accumulate large inline helper blocks.
 
 ## Output checklist
 
@@ -71,4 +72,8 @@ Follow this workflow when implementing or refactoring UI components.
 
 ## Styling rules
 
-- Use `tailwindcss`
+- Use Tailwind utility classes and existing project conventions.
+- Keep style behavior predictable and colocated with the component.
+- Avoid introducing custom style abstractions unless repeated usage justifies extraction.
+
+For repository-specific placement and anti-pattern examples, read `references/project-conventions.md`.

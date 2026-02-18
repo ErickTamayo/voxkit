@@ -39,37 +39,13 @@ Follow this workflow when adding or updating localized copy.
 - Verify validation/error strings are also localized.
 - Verify copy remains understandable when interpolation values are empty/null.
 
-## Libraries and config
+## Practical guardrails
 
-- `i18next`
-- `react-i18next`
-- Config file: `resources/js/i18n/config.ts`
-
-## Locale files
-
-- Primary locale folder: `resources/js/i18n/locales/`
-- Current example locale: `resources/js/i18n/locales/en.json`
-
-## Key strategy in Voxspot
-
-- Use plain English sentence keys instead of nested dot-key namespaces.
-- Rely on i18next fallback behavior so missing keys display readable text.
-- Keep interpolation placeholders in i18next format: `{{variableName}}`.
-
-## Placement rules
-
-- Do not call translation hooks inside base UI primitives.
-- Translate in implementation-level components (screens/forms/features).
-- Include localized strings in form validation rules.
-
-## Pluralization and conditional copy
-
-- Use `_one` / `_other` entries for pluralizable labels.
-- Prefer separate keys for conditional sentences over string building.
-
-## Supporting docs
-
-- `references/i18n.md`
+- Do not introduce a new i18n library or translation framework without approval.
+- Do not place translation hooks or translation resolution logic in base UI primitives.
+- Keep any translation helper usage at route/feature/form boundaries.
+- Keep interpolation placeholders explicit and avoid string concatenation.
+- Use separate keys for materially different conditional sentences.
 
 ## Output checklist
 
@@ -77,3 +53,5 @@ Follow this workflow when adding or updating localized copy.
 - Key usage is consistent with project conventions.
 - Interpolation/pluralization are implemented correctly.
 - No translation logic leaked into primitive components.
+
+For strategy details and examples, read `references/i18n.md`.
