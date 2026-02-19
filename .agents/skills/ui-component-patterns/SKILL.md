@@ -41,7 +41,13 @@ Follow this workflow when implementing or refactoring UI components.
 - Prefer `useSuspenseQuery` for Apollo route/component data.
 - Keep loaded-content rendering in a dedicated `RouteNameContent` component.
 - Keep loading fallback UI separate from loaded content.
+- Use `react-error-boundary` for route/feature error boundaries unless there is a strong reason not to.
 - Keep error fallback UI explicit and actionable.
+- Fallbacks must be route/feature-specific (no generic `Something went wrong` copy).
+- Fallbacks must include:
+  - one retry action (`Try again`) wired to `resetErrorBoundary`,
+  - one safe escape action (for example `Go home` or `Back to sign in`).
+- If domain-specific recovery is unclear, default to retry + safe escape first, then refine with product-specific actions.
 - Avoid ad-hoc `isLoading` and `error` branch sprawl when Suspense boundaries can own that behavior.
 
 Example:
@@ -49,8 +55,10 @@ Example:
 ```tsx
 import { useSuspenseQuery } from "@apollo/client/react";
 import { Suspense } from "react";
-import { ErrorBoundary } from "react-error-boundary";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
+import { useLocation } from "wouter";
 import { MeDocument } from "@/graphql/root.graphql";
+import { Button } from "@/components/ui/button";
 
 function AccountRouteContent(): React.JSX.Element {
     const { data } = useSuspenseQuery(MeDocument);
@@ -61,13 +69,27 @@ function AccountRouteLoading(): React.JSX.Element {
     return <p className="text-sm text-muted-foreground">Loading account...</p>;
 }
 
-function AccountRouteError(): React.JSX.Element {
-    return <p className="text-sm text-destructive">Could not load account.</p>;
+function AccountRouteErrorBoundary({ resetErrorBoundary }: FallbackProps): React.JSX.Element {
+    const [, setLocation] = useLocation();
+
+    return (
+        <div className="space-y-3 rounded-md border border-destructive/30 bg-destructive/10 p-4">
+            <p className="text-sm text-destructive">Could not load account details.</p>
+            <div className="flex gap-2">
+                <Button type="button" onClick={() => resetErrorBoundary()}>
+                    Try again
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setLocation("/")}>
+                    Go home
+                </Button>
+            </div>
+        </div>
+    );
 }
 
 export default function AccountRoute(): React.JSX.Element {
     return (
-        <ErrorBoundary fallback={<AccountRouteError />}>
+        <ErrorBoundary FallbackComponent={AccountRouteErrorBoundary}>
             <Suspense fallback={<AccountRouteLoading />}>
                 <AccountRouteContent />
             </Suspense>
@@ -88,6 +110,7 @@ export default function AccountRoute(): React.JSX.Element {
 - No mega utility files with unrelated helpers.
 - No large inline helper blocks in route component files.
 - No duplicated loading/error UI logic across many route files when a reusable boundary component can be used.
+- No generic non-contextual error fallback copy for route boundaries.
 
 ## 8. Validate integration quality
 
@@ -120,7 +143,7 @@ export default function AccountRoute(): React.JSX.Element {
 
 ## Component implementation rules
 
-- Use arrow-function components (`react/function-component-definition` enforced).
+- Prefer arrow-function components unless there is a strong reason to use a named function declaration.
 - Use explicit prop typing; avoid `any` unless truly unavoidable.
 - Keep route constants/types in route files or `*.route.constants.ts` / `*.route.types.ts`.
 - Move large route helpers to colocated `utils/` files; avoid inline helper blocks in `*.route.tsx`.
