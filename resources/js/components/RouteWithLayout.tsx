@@ -1,19 +1,20 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, FC, ReactNode } from "react";
 import { Route, type RouteProps } from "wouter";
 
 type LayoutComponent = ComponentType<{ children: ReactNode }>;
 type PageComponent = ComponentType;
 
-type RouteWithLayoutProps = Omit<RouteProps, "component" | "children"> & {
+interface RouteWithLayoutProps
+    extends Omit<RouteProps, "children" | "component"> {
     component: PageComponent;
     layouts?: LayoutComponent[];
-};
+}
 
-export function RouteWithLayout({
+export const RouteWithLayout: FC<RouteWithLayoutProps> = ({
     layouts = [],
     component,
     ...props
-}: RouteWithLayoutProps): React.JSX.Element {
+}) => {
     const Page = component;
     const renderedPage = layouts.reduceRight<ReactNode>(
         (content, Layout) => <Layout>{content}</Layout>,
@@ -21,4 +22,4 @@ export function RouteWithLayout({
     );
 
     return <Route {...props}>{renderedPage}</Route>;
-}
+};

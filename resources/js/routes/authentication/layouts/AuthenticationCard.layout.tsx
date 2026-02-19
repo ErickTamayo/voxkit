@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { FC, ReactNode } from "react";
 import {
     Card,
     CardContent,
@@ -8,13 +8,13 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 
-type AuthenticationCardLayoutProps = {
+interface AuthenticationCardLayoutProps {
     children: ReactNode;
-};
+}
 
-export function AuthenticationCardLayout({
+export const AuthenticationCardLayout: FC<AuthenticationCardLayoutProps> = ({
     children,
-}: AuthenticationCardLayoutProps): React.JSX.Element {
+}) => {
     return (
         <main className="grid min-h-screen place-items-center bg-muted p-6">
             <Card className="w-full max-w-md">
@@ -34,4 +34,4 @@ export function AuthenticationCardLayout({
             </Card>
         </main>
     );
-}
+};

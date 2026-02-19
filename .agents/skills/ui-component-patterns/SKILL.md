@@ -16,11 +16,20 @@ Follow this workflow when implementing or refactoring UI components.
 
 ## 2. Define API and typing before implementation
 
-- Declare explicit prop types before implementing rendering logic.
+- Declare explicit prop interfaces before implementing rendering logic.
 - Prefer narrow, intentional props over pass-through catch-all props.
 - Keep naming predictable and consistent with nearby components.
 - Avoid introducing `any`; model state and variants explicitly.
-- Prefer arrow-function components and explicit React return types.
+- Props must use `interface` declarations, not inline object types.
+- Always destructure props in the parameter list.
+- Use `const Component: FC<Props> = ({ ... }) => { ... }`.
+- Import React APIs/types by name (for example `import { Suspense, type FC } from "react"`).
+- Do not use namespace imports (`import * as React from "react"`).
+- Prefer named exports for non-route modules.
+- Route files may use default export, but only as `const RouteName: FC = ...` then `export default RouteName;` at file end.
+- Do not use anonymous default exports.
+- Do not start with explicit component return signatures like `(...): React.JSX.Element`.
+- Only if the canonical pattern is not feasible (for example complex generics or overloaded signatures), fall back to explicit prop/return typing after attempting the canonical signature first.
 
 ## 3. Use composition-first rendering
 
@@ -54,22 +63,24 @@ Example:
 
 ```tsx
 import { useSuspenseQuery } from "@apollo/client/react";
-import { Suspense } from "react";
+import { Suspense, type FC } from "react";
 import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { useLocation } from "wouter";
 import { MeDocument } from "@/graphql/root.graphql";
 import { Button } from "@/components/ui/button";
 
-function AccountRouteContent(): React.JSX.Element {
+const AccountRouteContent: FC = () => {
     const { data } = useSuspenseQuery(MeDocument);
     return <p>{data.me?.email}</p>;
-}
+};
 
-function AccountRouteLoading(): React.JSX.Element {
+const AccountRouteLoading: FC = () => {
     return <p className="text-sm text-muted-foreground">Loading account...</p>;
-}
+};
 
-function AccountRouteErrorBoundary({ resetErrorBoundary }: FallbackProps): React.JSX.Element {
+const AccountRouteErrorBoundary: FC<FallbackProps> = ({
+    resetErrorBoundary,
+}) => {
     const [, setLocation] = useLocation();
 
     return (
@@ -85,9 +96,9 @@ function AccountRouteErrorBoundary({ resetErrorBoundary }: FallbackProps): React
             </div>
         </div>
     );
-}
+};
 
-export default function AccountRoute(): React.JSX.Element {
+const AccountRoute: FC = () => {
     return (
         <ErrorBoundary FallbackComponent={AccountRouteErrorBoundary}>
             <Suspense fallback={<AccountRouteLoading />}>
@@ -95,7 +106,9 @@ export default function AccountRoute(): React.JSX.Element {
             </Suspense>
         </ErrorBoundary>
     );
-}
+};
+
+export default AccountRoute;
 ```
 
 ## 6. Follow route composition patterns
@@ -116,8 +129,45 @@ export default function AccountRoute(): React.JSX.Element {
 
 - Confirm accessibility roles/labels for interactive UI.
 - Confirm import paths stay direct and explicit.
+- Confirm import ordering follows project conventions.
 - Confirm no accidental barrel-export patterns were introduced.
 - Confirm route/component files do not accumulate large inline helper blocks.
+
+## 9. State, Hooks, and Performance
+
+- Do not put server data in global state; use Apollo for server state.
+- Keep state local first; only promote state when needed.
+- Avoid prop drilling past 2 levels; use Zustand at that point.
+- Prefer `useReducer` over multiple related `useState` values.
+- Custom hooks must:
+  - start with `use`,
+  - own one concern,
+  - live in the appropriate `hooks/` scope,
+  - return a consistent object shape.
+- Prefer business logic in hooks rather than directly in components.
+- Do not use `useEffect` for derived state.
+- Do not use `useCallback` and `useMemo` (React Compiler project rule).
+- Every route-level component must be lazy loaded.
+- Keep callback references stable when possible without memoization.
+- Virtualize long lists with `@tanstack/virtual`.
+- API base URLs and keys must come from `.env`; never hardcode them.
+
+## 10. Styling, TypeScript, Testing, and Safety
+
+- No inline styles except truly dynamic values.
+- No global CSS beyond resets and design tokens.
+- Use CSS custom properties for design tokens.
+- Use `interface` for object shapes; use `type` for unions/intersections.
+- No `any`; use `unknown` and narrow or define explicit types.
+- Co-locate types with owning features; only move shared types when reused across features.
+- Prefer union literals for simple string states over enums.
+- Test user-visible behavior and business logic, not implementation details.
+- Co-locate tests with components/hooks when possible.
+- Remove dead code; do not leave commented-out code.
+- Avoid committed `console` logs.
+- Use semantic HTML and keyboard-accessible interactions.
+- Avoid `dangerouslySetInnerHTML`; sanitize user-generated content.
+- Never store sensitive tokens in `localStorage`; use secure backend cookie strategies.
 
 ## Output checklist
 
@@ -143,7 +193,9 @@ export default function AccountRoute(): React.JSX.Element {
 
 ## Component implementation rules
 
-- Prefer arrow-function components unless there is a strong reason to use a named function declaration.
+- Prefer arrow-function components and `FC<Props>` by default.
+- Props should be declared with `interface` and destructured at the parameter.
+- Use explicit prop/return signatures only after attempting the canonical signature and confirming an edge case requires it.
 - Use explicit prop typing; avoid `any` unless truly unavoidable.
 - Keep route constants/types in route files or `*.route.constants.ts` / `*.route.types.ts`.
 - Move large route helpers to colocated `utils/` files; avoid inline helper blocks in `*.route.tsx`.

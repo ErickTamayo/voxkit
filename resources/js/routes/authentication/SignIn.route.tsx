@@ -1,11 +1,11 @@
-import { type FormEvent, useState } from "react";
+import { useState, type FC, type FormEvent } from "react";
 import { Redirect, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useSession } from "@/hooks/useSession";
 
-export default function SignInRoute(): React.JSX.Element {
+const SignInRoute: FC = () => {
     const [email, setEmail] = useState("test@example.com");
     const [requestErrorMessage, setRequestErrorMessage] = useState<string | null>(null);
     const [, setLocation] = useLocation();
@@ -15,7 +15,9 @@ export default function SignInRoute(): React.JSX.Element {
         status,
     } = useSession();
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    async function handleSubmit(
+        event: FormEvent<HTMLFormElement>,
+    ): Promise<void> {
         event.preventDefault();
         setRequestErrorMessage(null);
 
@@ -64,4 +66,6 @@ export default function SignInRoute(): React.JSX.Element {
             </Button>
         </form>
     );
-}
+};
+
+export default SignInRoute;

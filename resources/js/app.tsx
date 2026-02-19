@@ -1,6 +1,6 @@
 import "../css/app.css";
 import { ApolloProvider } from "@apollo/client/react";
-import { StrictMode, Suspense, lazy } from "react";
+import { StrictMode, Suspense, lazy, type FC } from "react";
 import { createRoot } from "react-dom/client";
 import { Redirect, Route, Switch } from "wouter";
 import { AuthenticatedRoute } from "@/components/AuthenticatedRoute";
@@ -17,7 +17,7 @@ const AccountRoute = lazy(
     () => import("@/routes/authentication/Authenticated.route"),
 );
 
-function App(): React.JSX.Element {
+const App: FC = () => {
     return (
         <ApolloProvider client={apolloClient}>
             <Suspense fallback={<p className="px-4 py-6 text-sm text-muted-foreground">Loading...</p>}>
@@ -45,7 +45,7 @@ function App(): React.JSX.Element {
             </Suspense>
         </ApolloProvider>
     );
-}
+};
 
 const appElement = document.getElementById("app");
 

@@ -1,8 +1,9 @@
+import type { FC } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/useSession";
 
-export default function HomeRoute(): React.JSX.Element {
+const HomeRoute: FC = () => {
     const [, setLocation] = useLocation();
     const { status } = useSession();
 
@@ -42,4 +43,6 @@ export default function HomeRoute(): React.JSX.Element {
             </section>
         </main>
     );
-}
+};
+
+export default HomeRoute;

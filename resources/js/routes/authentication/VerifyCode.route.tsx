@@ -1,11 +1,11 @@
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { useState } from "react";
+import { useState, type FC } from "react";
 import { Redirect, useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from "@/components/ui/input-otp";
 import { useSession } from "@/hooks/useSession";
 
-export default function VerifyCodeRoute(): React.JSX.Element {
+const VerifyCodeRoute: FC = () => {
     const params = useParams<{ email: string }>();
     const emailForCode = params?.email ? decodeURIComponent(params.email) : null;
     const [code, setCode] = useState("");
@@ -141,4 +141,6 @@ export default function VerifyCodeRoute(): React.JSX.Element {
             </div>
         </div>
     );
-}
+};
+
+export default VerifyCodeRoute;
