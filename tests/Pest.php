@@ -1,5 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Nuwave\Lighthouse\Testing\MakesGraphQLRequests;
+use Nuwave\Lighthouse\Testing\RefreshesSchemaCache;
+
 /*
 |--------------------------------------------------------------------------
 | Test Case
@@ -12,8 +20,11 @@
 */
 
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature');
+    ->use(RefreshDatabase::class)
+    ->in('Feature', 'Unit');
+
+uses(MakesGraphQLRequests::class, RefreshesSchemaCache::class)
+    ->in('Feature/GraphQL');
 
 /*
 |--------------------------------------------------------------------------
@@ -41,7 +52,10 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function actingAsUser(?User $user = null): User
 {
-    // ..
+    $user ??= User::factory()->create();
+    Sanctum::actingAs($user);
+
+    return $user;
 }

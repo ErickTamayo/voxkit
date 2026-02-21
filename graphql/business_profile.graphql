@@ -1,0 +1,95 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Business profile used for invoices"
+type BusinessProfile {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    "Business name"
+    business_name: String
+
+    "Street address"
+    address_street: String
+
+    "City"
+    address_city: String
+
+    "State/Region"
+    address_state: String
+
+    "Country"
+    address_country: String
+
+    "Postal code"
+    address_postal: String
+
+    "Phone number"
+    phone: String
+
+    "Email address"
+    email: String
+
+    "Payment instructions"
+    payment_instructions: String
+
+    "Logo path"
+    logo_path: String
+
+    "When the profile was created"
+    created_at: Timestamp!
+
+    "When the profile was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this profile"
+    user: User! @belongsTo
+}
+
+"Input for updating a business profile"
+input UpdateBusinessProfileInput {
+    business_name: String
+    address_street: String
+    address_city: String
+    address_state: String
+    address_country: String
+    address_postal: String
+    phone: String
+    email: String
+    payment_instructions: String
+    logo_path: String
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single business profile by ID"
+    businessProfile(id: ULID! @eq): BusinessProfile @find @guard
+
+    "List all business profiles for authenticated user"
+    businessProfiles(first: Int = 20, page: Int): [BusinessProfile!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Update a business profile"
+    updateBusinessProfile(id: ULID!, input: UpdateBusinessProfileInput! @spread): BusinessProfile
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+}
+
+

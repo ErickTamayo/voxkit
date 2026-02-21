@@ -1,0 +1,202 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Rate type enum"
+enum RateType {
+    FLAT @enum(value: "flat")
+    HOURLY @enum(value: "hourly")
+    PER_FINISHED_HOUR @enum(value: "per_finished_hour")
+    PER_WORD @enum(value: "per_word")
+    PER_LINE @enum(value: "per_line")
+    BUYOUT @enum(value: "buyout")
+}
+
+"Audition status enum"
+enum AuditionStatus {
+    RECEIVED @enum(value: "received")
+    PREPARING @enum(value: "preparing")
+    SUBMITTED @enum(value: "submitted")
+    SHORTLISTED @enum(value: "shortlisted")
+    CALLBACK @enum(value: "callback")
+    WON @enum(value: "won")
+    LOST @enum(value: "lost")
+    EXPIRED @enum(value: "expired")
+}
+
+"Voice over audition"
+type Audition {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    """
+    Polymorphic type discriminator for the source entity (see SourceableEntity).
+    """
+    sourceable_type: String!
+
+    """
+    ID of the source entity matching sourceable_type.
+    """
+    sourceable_id: ULID!
+
+    "External source reference"
+    source_reference: String
+
+    "Project title"
+    project_title: String!
+
+    "Brand name"
+    brand_name: String
+
+    "Character name"
+    character_name: String
+
+    "Category"
+    category: ProjectCategory!
+
+    "Word count"
+    word_count: Int
+
+    "Budget minimum (cents)"
+    budget_min: Int
+
+    "Budget maximum (cents)"
+    budget_max: Int
+
+    "Quoted rate (cents)"
+    quoted_rate: Int
+
+    "Rate type"
+    rate_type: RateType!
+
+    "Response deadline"
+    response_deadline: Timestamp
+
+    "Project deadline"
+    project_deadline: Timestamp
+
+    "Audition status"
+    status: AuditionStatus!
+
+    "When the audition was submitted to the client"
+    submitted_at: Timestamp
+
+    "When the audition was created"
+    created_at: Timestamp!
+
+    "When the audition was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this audition"
+    user: User! @belongsTo
+
+    "The source entity (platform or contact)"
+    sourceable: SourceableEntity @morphTo
+
+    "Usage rights associated with this audition"
+    usageRights: [UsageRight!]! @morphMany
+
+    "Attachments for this audition"
+    attachments: [Attachment!]! @morphMany
+
+    "Notes for this audition (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+
+    "Job created from this audition"
+    job: Job @hasOne
+}
+
+"Input for creating an audition"
+input CreateAuditionInput {
+    """
+    Polymorphic type discriminator for the source entity (see SourceableEntity).
+    """
+    sourceable_type: String!
+    """
+    ID of the source entity matching sourceable_type.
+    """
+    sourceable_id: ULID!
+    source_reference: String
+    project_title: String!
+    brand_name: String
+    character_name: String
+    category: ProjectCategory!
+    word_count: Int
+    budget_min: Int
+    budget_max: Int
+    quoted_rate: Int
+    rate_type: RateType!
+    response_deadline: Timestamp
+    project_deadline: Timestamp
+    status: AuditionStatus!
+    submitted_at: Timestamp
+}
+
+"Input for updating an audition"
+input UpdateAuditionInput {
+    """
+    Polymorphic type discriminator for the source entity (see SourceableEntity).
+    """
+    sourceable_type: String
+    """
+    ID of the source entity matching sourceable_type.
+    """
+    sourceable_id: ULID
+    source_reference: String
+    project_title: String
+    brand_name: String
+    character_name: String
+    category: ProjectCategory
+    word_count: Int
+    budget_min: Int
+    budget_max: Int
+    quoted_rate: Int
+    rate_type: RateType
+    response_deadline: Timestamp
+    project_deadline: Timestamp
+    status: AuditionStatus
+    submitted_at: Timestamp
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single audition by ID"
+    audition(id: ULID! @eq): Audition @find @guard
+
+    "List all auditions for authenticated user"
+    auditions(first: Int = 20, page: Int): [Audition!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new audition"
+    createAudition(input: CreateAuditionInput! @spread): Audition!
+        @create
+        @inject(context: "user.id", name: "user_id")
+        @guard
+
+    "Update an audition"
+    updateAudition(id: ULID!, input: UpdateAuditionInput! @spread): Audition
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+
+    "Delete an audition"
+    deleteAudition(id: ULID! @whereKey): Audition
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}

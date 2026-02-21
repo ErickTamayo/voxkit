@@ -1,0 +1,77 @@
+type AuditionMetricsSnapshot {
+    """
+    Total number of auditions submitted during the period.
+    """
+    total: Int!
+    """
+    Percentage change vs the comparison period's total.
+    """
+    trend_percentage: Float!
+    """
+    Total number of auditions for the comparison period immediately preceding the current range.
+    """
+    comparison_total: Int!
+}
+
+type AuditionMetrics {
+    """
+    Auditions submitted within the requested period.
+    """
+    current: AuditionMetricsSnapshot!
+    """
+    Booking rate: percentage of WON auditions vs total auditions in the period.
+    Returns 0.0 if no auditions exist.
+    """
+    booking_rate: Float!
+}
+
+type AuditionMetricsResponse {
+    """
+    The exact period boundaries used for metrics calculation (no expansion)
+    """
+    period: DateRange!
+    """
+    Current audition metrics including counts and booking rate.
+    """
+    metrics: AuditionMetrics!
+}
+
+type AuditionChartResponse implements ChartResponse {
+    """
+    The range of data requested - either a compact range (1W, MTD, etc.) or explicit dates
+    """
+    range: ChartRange!
+    """
+    The actual time window used for the chart.
+    Early MTD/QTD/YTD requests are automatically expanded for better visualization.
+    """
+    effectiveWindow: DateRangeWindow!
+    """
+    Chart data points with timestamp and count of auditions submitted
+    """
+    chart: [ChartPoint!]!
+}
+
+extend type Query {
+    """
+    Get audition metrics with strict period boundaries.
+    MTD = exactly month start to today, no expansion.
+    Returns audition count with trends and booking rate.
+    """
+    auditionMetrics(
+        period: CompactRange! = OneWeek
+    ): AuditionMetricsResponse!
+        @guard
+        @field(resolver: "App\\GraphQL\\Queries\\AuditionMetricsQuery")
+
+    """
+    Get audition chart data with intelligent time window expansion.
+    Backend determines optimal visualization window (e.g., MTD on day 3 = 30 days).
+    Returns only chart points showing auditions submitted over time.
+    """
+    auditionChart(
+        period: CompactRange! = OneWeek
+    ): AuditionChartResponse!
+        @guard
+        @field(resolver: "App\\GraphQL\\Queries\\AuditionChartQuery")
+}

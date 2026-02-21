@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\AuthCode;
@@ -15,7 +17,7 @@ class AuthCodeService
 
     private const MAX_ATTEMPTS = 5;
 
-    public function issueCode(User $user, string $purpose = AuthCode::PURPOSE_AUTH): string
+    public function issueCode(User $user, string $purpose): string
     {
         $this->invalidateExistingCodes($user, $purpose);
 
@@ -94,7 +96,8 @@ class AuthCodeService
 
     private function generateCode(User $user): string
     {
-        if (app()->environment('local') && strtolower($user->email) === 'test@example.com') {
+        // Force code to 123456 for test@example.com in local environment for easier testing
+        if (app()->environment('local') && $user->email === 'test@example.com') {
             return '123456';
         }
 

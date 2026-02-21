@@ -1,0 +1,148 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Invoice status enum"
+enum InvoiceStatus {
+    DRAFT @enum(value: "draft")
+    SENT @enum(value: "sent")
+    PAID @enum(value: "paid")
+    OVERDUE @enum(value: "overdue")
+    CANCELLED @enum(value: "cancelled")
+}
+
+"Invoice for a job"
+type Invoice {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    "Job ID"
+    job_id: ULID
+
+    "Client contact ID"
+    client_id: ULID!
+
+    "Invoice number"
+    invoice_number: String!
+
+    "Issued date"
+    issued_at: Timestamp!
+
+    "Due date"
+    due_at: Timestamp!
+
+    "Subtotal"
+    subtotal: MonetaryAmount! @field(resolver: "App\\GraphQL\\Resolvers\\MonetaryAmountResolver@resolve")
+
+    "Tax rate (decimal)"
+    tax_rate: Float
+
+    "Tax amount"
+    tax_amount: MonetaryAmount @field(resolver: "App\\GraphQL\\Resolvers\\MonetaryAmountResolver@resolve")
+
+    "Total"
+    total: MonetaryAmount! @field(resolver: "App\\GraphQL\\Resolvers\\MonetaryAmountResolver@resolve")
+
+    "Invoice status"
+    status: InvoiceStatus!
+
+    "Paid date"
+    paid_at: Timestamp
+
+    "When the invoice was created"
+    created_at: Timestamp!
+
+    "When the invoice was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this invoice"
+    user: User! @belongsTo
+
+    "The job this invoice belongs to"
+    job: Job @belongsTo
+
+    "The client contact"
+    client: Contact! @belongsTo(relation: "client")
+
+    "Invoice line items"
+    invoiceItems: [InvoiceItem!]! @hasMany
+
+    "Attachments for this invoice"
+    attachments: [Attachment!]! @morphMany
+
+    "Notes for this entity (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for creating an invoice"
+input CreateInvoiceInput {
+    job_id: ULID
+    client_id: ULID!
+    invoice_number: String!
+    issued_at: Timestamp!
+    due_at: Timestamp!
+    subtotal: MoneyInput!
+    tax_rate: Float
+    tax_amount: MoneyInput
+    total: MoneyInput!
+    status: InvoiceStatus!
+    paid_at: Timestamp
+}
+
+"Input for updating an invoice"
+input UpdateInvoiceInput {
+    job_id: ULID
+    client_id: ULID
+    invoice_number: String
+    issued_at: Timestamp
+    due_at: Timestamp
+    subtotal: MoneyInput
+    tax_rate: Float
+    tax_amount: MoneyInput
+    total: MoneyInput
+    status: InvoiceStatus
+    paid_at: Timestamp
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single invoice by ID"
+    invoice(id: ULID! @eq): Invoice @find @guard
+
+    "List all invoices for authenticated user"
+    invoices(first: Int = 20, page: Int): [Invoice!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new invoice"
+    createInvoice(input: CreateInvoiceInput!): Invoice!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\InvoiceMutations@create")
+
+    "Update an invoice"
+    updateInvoice(id: ULID!, input: UpdateInvoiceInput!): Invoice
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\InvoiceMutations@update")
+
+    "Delete an invoice"
+    deleteInvoice(id: ULID! @whereKey): Invoice
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+
+

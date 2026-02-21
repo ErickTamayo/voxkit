@@ -1,0 +1,103 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Expense record"
+type Expense {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    "Expense definition ID"
+    expense_definition_id: ULID
+
+    "Description"
+    description: String!
+
+    "Monetary amount with original and converted values"
+    amount: MonetaryAmount! @field(resolver: "App\\GraphQL\\Resolvers\\MonetaryAmountResolver@resolve")
+
+    "Category"
+    category: ExpenseCategory!
+
+    "Expense date"
+    date: Timestamp!
+
+    "When the expense was created"
+    created_at: Timestamp!
+
+    "When the expense was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this expense"
+    user: User! @belongsTo
+
+    "The expense definition"
+    expenseDefinition: ExpenseDefinition @belongsTo
+
+    "Attachments for this expense"
+    attachments: [Attachment!]! @morphMany
+
+    "Notes for this entity (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for creating an expense"
+input CreateExpenseInput {
+    expense_definition_id: ULID
+    description: String!
+    amount: MoneyInput!
+    category: ExpenseCategory!
+    date: Timestamp!
+}
+
+"Input for updating an expense"
+input UpdateExpenseInput {
+    expense_definition_id: ULID
+    description: String
+    amount: MoneyInput
+    category: ExpenseCategory
+    date: Timestamp
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single expense by ID"
+    expense(id: ULID! @eq): Expense @find @guard
+
+    "List all expenses for authenticated user"
+    expenses(first: Int = 20, page: Int): [Expense!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new expense"
+    createExpense(input: CreateExpenseInput!): Expense!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\ExpenseMutations@create")
+
+    "Update an expense"
+    updateExpense(id: ULID!, input: UpdateExpenseInput!): Expense
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\ExpenseMutations@update")
+
+    "Delete an expense"
+    deleteExpense(id: ULID! @whereKey): Expense
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+
+

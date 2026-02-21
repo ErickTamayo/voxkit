@@ -1,0 +1,213 @@
+type RevenueMetricsSnapshot {
+    """
+    Total revenue for the period, in the requested base currency.
+    """
+    total: Money!
+    """
+    Percentage change vs the comparison period's total.
+    """
+    trend_percentage: Float!
+    """
+    Total revenue for the comparison period immediately preceding the current range.
+    """
+    comparison_total: Money!
+    """
+    Precision of the aggregated total (EXACT when all conversions are exact).
+    """
+    precision: Precision!
+}
+
+"""
+Lightweight metrics for pipeline-style totals (no trend or comparisons).
+"""
+type RevenuePipelineMetrics {
+    """
+    Total value in the requested base currency.
+    """
+    total: Money!
+    """
+    Precision of the aggregated total (EXACT when all conversions are exact).
+    """
+    precision: Precision!
+}
+
+type RevenueMetrics {
+    """
+    Paid revenue within the requested period.
+    """
+    current: RevenueMetricsSnapshot!
+    """
+    Value of active jobs (pipeline snapshot, not period-bound).
+    """
+    pipeline: RevenuePipelineMetrics!
+    """
+    Money still expected to be collected (unpaid invoices + unbilled active jobs).
+    """
+    in_flight: RevenuePipelineMetrics!
+}
+
+type RevenueMetricsResponse {
+    """
+    Base currency used for all metrics totals.
+    """
+    baseCurrency: String!
+    """
+    The exact period boundaries used for metrics calculation (no expansion)
+    """
+    period: DateRange!
+    """
+    Current, pipeline, and in-flight revenue metrics.
+    """
+    metrics: RevenueMetrics!
+}
+
+type RevenueChartResponse implements ChartResponse {
+    """
+    Currency used for revenue calculations
+    """
+    baseCurrency: String!
+    """
+    The range of data requested - either a compact range (1W, MTD, etc.) or explicit dates
+    """
+    range: ChartRange!
+    """
+    The actual time window used for the chart.
+    Early MTD/QTD/YTD requests are automatically expanded for better visualization.
+    """
+    effectiveWindow: DateRangeWindow!
+    """
+    Chart data points with timestamp and value
+    """
+    chart: [ChartPoint!]!
+}
+
+enum RevenueSourceType {
+    PLATFORM @enum(value: "platform")
+    AGENT @enum(value: "agent")
+    DIRECT @enum(value: "direct")
+    UNKNOWN @enum(value: "unknown")
+}
+
+type RevenueBySourceEntry {
+    """
+    The type of source (platform, agent, direct client, or unknown).
+    """
+    source_type: RevenueSourceType!
+    """
+    Human-readable label for the source (platform, agent, direct client, or unknown).
+    """
+    source_name: String!
+    """
+    Paid revenue within the requested period.
+    """
+    paid: Money!
+    """
+    In-flight revenue snapshot (unpaid invoices + unbilled active jobs).
+    """
+    in_flight: Money!
+    """
+    Percentage of total (paid + in-flight) for this source.
+    """
+    percentage_of_total: Float!
+}
+
+type RevenueBySourceResponse {
+    """
+    Base currency used for all metrics totals.
+    """
+    baseCurrency: String!
+    """
+    The exact period boundaries used for paid revenue (no expansion).
+    """
+    period: DateRange!
+    """
+    Revenue grouped by source.
+    """
+    sources: [RevenueBySourceEntry!]!
+}
+
+type RevenueByCategoryEntry {
+    """
+    Project category for the revenue bucket.
+    """
+    category: ProjectCategory!
+    """
+    Paid revenue within the requested period.
+    """
+    paid: Money!
+    """
+    In-flight revenue snapshot (unpaid invoices + unbilled active jobs).
+    """
+    in_flight: Money!
+    """
+    Percentage of total (paid + in-flight) for this category.
+    """
+    percentage_of_total: Float!
+}
+
+type RevenueByCategoryResponse {
+    """
+    Base currency used for all metrics totals.
+    """
+    baseCurrency: String!
+    """
+    The exact period boundaries used for paid revenue (no expansion).
+    """
+    period: DateRange!
+    """
+    Revenue grouped by project category.
+    """
+    categories: [RevenueByCategoryEntry!]!
+}
+
+extend type Query {
+    """
+    Get revenue metrics with strict period boundaries.
+    MTD = exactly month start to today, no expansion.
+    Returns current/pipeline/in-flight revenue with trends and comparisons.
+    """
+    revenueMetrics(
+        period: CompactRange! = OneWeek
+        baseCurrency: String
+    ): RevenueMetricsResponse!
+        @guard
+        @field(resolver: "App\\GraphQL\\Queries\\RevenueMetricsQuery")
+
+    """
+    Get revenue chart data with intelligent time window expansion.
+    Backend determines optimal visualization window (e.g., MTD on day 3 = 30 days).
+    Returns only chart points, no metrics.
+    """
+    revenueChart(
+        period: CompactRange! = OneWeek
+        baseCurrency: String
+    ): RevenueChartResponse!
+        @guard
+        @field(resolver: "App\\GraphQL\\Queries\\RevenueChartQuery")
+
+    """
+    Get revenue grouped by source (platforms, agents, direct clients).
+    Paid revenue is period-bound; in-flight revenue is a snapshot.
+    Returns the top `take` sources by total (paid + in-flight).
+    """
+    revenueBySource(
+        period: CompactRange! = OneWeek
+        baseCurrency: String
+        take: Int = 10
+    ): RevenueBySourceResponse!
+        @guard
+        @field(resolver: "App\\GraphQL\\Queries\\RevenueBySourceQuery")
+
+    """
+    Get revenue grouped by project category.
+    Paid revenue is period-bound; in-flight revenue is a snapshot.
+    Returns the top `take` categories by total (paid + in-flight).
+    """
+    revenueByCategory(
+        period: CompactRange! = OneWeek
+        baseCurrency: String
+        take: Int = 10
+    ): RevenueByCategoryResponse!
+        @guard
+        @field(resolver: "App\\GraphQL\\Queries\\RevenueByCategoryQuery")
+}

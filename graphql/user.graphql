@@ -1,0 +1,60 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Account of a person who uses this application."
+type User {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User's display name"
+    name: String!
+
+    "Unique email address"
+    email: String!
+
+    "When the email was verified"
+    email_verified_at: Timestamp
+
+    "When the account was created"
+    created_at: Timestamp!
+
+    "When the account was last updated"
+    updated_at: Timestamp!
+
+    "User settings"
+    settings: Settings @hasOne
+
+    "Business profile"
+    businessProfile: BusinessProfile @hasOne
+}
+
+"Input for updating a user"
+input UpdateUserInput {
+    "User's display name"
+    name: String
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get the authenticated user"
+    me: User! @guard @field(resolver: "App\\GraphQL\\Queries\\MeQuery")
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Update the authenticated user's profile"
+    updateMe(input: UpdateUserInput! @spread): User!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\UpdateMeMutation")
+}
+
+

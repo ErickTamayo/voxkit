@@ -1,0 +1,137 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Expense category enum"
+enum ExpenseCategory {
+    EQUIPMENT @enum(value: "equipment")
+    SOFTWARE @enum(value: "software")
+    STUDIO @enum(value: "studio")
+    TRAINING @enum(value: "training")
+    MARKETING @enum(value: "marketing")
+    MEMBERSHIP @enum(value: "membership")
+    TRAVEL @enum(value: "travel")
+    OFFICE @enum(value: "office")
+    PROFESSIONAL_SERVICES @enum(value: "professional_services")
+    OTHER @enum(value: "other")
+}
+
+"Expense recurrence enum"
+enum ExpenseRecurrence {
+    ONE_OFF @enum(value: "one_off")
+    WEEKLY @enum(value: "weekly")
+    MONTHLY @enum(value: "monthly")
+    YEARLY @enum(value: "yearly")
+}
+
+"Expense definition (recurring or template)"
+type ExpenseDefinition {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    "Name"
+    name: String!
+
+    "Template amount"
+    amount: MonetaryAmount! @field(resolver: "App\\GraphQL\\Resolvers\\MonetaryAmountResolver@resolve")
+
+    "Category"
+    category: ExpenseCategory!
+
+    "Recurrence"
+    recurrence: ExpenseRecurrence!
+
+    "Recurrence day"
+    recurrence_day: Int
+
+    "Start date"
+    starts_at: Timestamp!
+
+    "End date"
+    ends_at: Timestamp
+
+    "Is active"
+    is_active: Boolean!
+
+    "When the definition was created"
+    created_at: Timestamp!
+
+    "When the definition was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this definition"
+    user: User! @belongsTo
+
+    "Expenses created from this definition"
+    expenses: [Expense!]! @hasMany
+
+    "Notes for this expense definition (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for creating an expense definition"
+input CreateExpenseDefinitionInput {
+    name: String!
+    amount: MoneyInput!
+    category: ExpenseCategory!
+    recurrence: ExpenseRecurrence!
+    recurrence_day: Int
+    starts_at: Timestamp!
+    ends_at: Timestamp
+    is_active: Boolean
+}
+
+"Input for updating an expense definition"
+input UpdateExpenseDefinitionInput {
+    name: String
+    amount: MoneyInput
+    category: ExpenseCategory
+    recurrence: ExpenseRecurrence
+    recurrence_day: Int
+    starts_at: Timestamp
+    ends_at: Timestamp
+    is_active: Boolean
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single expense definition by ID"
+    expenseDefinition(id: ULID! @eq): ExpenseDefinition @find @guard
+
+    "List all expense definitions for authenticated user"
+    expenseDefinitions(first: Int = 20, page: Int): [ExpenseDefinition!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new expense definition"
+    createExpenseDefinition(input: CreateExpenseDefinitionInput!): ExpenseDefinition!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\ExpenseDefinitionMutations@create")
+
+    "Update an expense definition"
+    updateExpenseDefinition(id: ULID!, input: UpdateExpenseDefinitionInput!): ExpenseDefinition
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\ExpenseDefinitionMutations@update")
+
+    "Delete an expense definition"
+    deleteExpenseDefinition(id: ULID! @whereKey): ExpenseDefinition
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+
+

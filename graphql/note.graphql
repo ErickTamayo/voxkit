@@ -1,0 +1,91 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"User note attached to an entity"
+type Note {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    """
+    Polymorphic type discriminator for the notable entity (see NotableEntity).
+    """
+    notable_type: String!
+
+    """
+    ID of the notable entity matching notable_type.
+    """
+    notable_id: ULID!
+
+    "Content of the note"
+    content: String!
+
+    "When the note was created"
+    created_at: Timestamp!
+
+    "When the note was last updated"
+    updated_at: Timestamp!
+
+    "When the note was soft deleted"
+    deleted_at: Timestamp
+
+    "The user who owns this note"
+    user: User! @belongsTo
+
+    "The notable entity for this note"
+    notable: NotableEntity @morphTo
+}
+
+"Input for adding a note"
+input AddNoteInput {
+    notable_id: ULID! @rules(apply: ["required"])
+    content: String! @rules(apply: ["required"])
+}
+
+"Input for updating a note"
+input UpdateNoteInput {
+    content: String! @rules(apply: ["required"])
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single note by ID"
+    note(id: ULID! @eq): Note @find @guard
+
+    "List all notes for authenticated user"
+    notes(first: Int = 20, page: Int): [Note!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Add a note to an entity"
+    addNote(input: AddNoteInput! @spread): Note!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\NoteMutations@add")
+
+    "Update a note"
+    updateNote(id: ULID!, input: UpdateNoteInput! @spread): Note
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+
+    "Delete a note"
+    deleteNote(id: ULID! @whereKey): Note
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+

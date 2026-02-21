@@ -1,0 +1,219 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Representation agent details"
+type Agent {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "Agency name"
+    agency_name: String
+
+    "Commission rate in basis points"
+    commission_rate: Int
+
+    "Territories covered by the agent"
+    territories: [String!]
+
+    "Whether this agent is exclusive"
+    is_exclusive: Boolean!
+
+    "Contract start date"
+    contract_start: Timestamp
+
+    "Contract end date"
+    contract_end: Timestamp
+
+    "When the agent was created"
+    created_at: Timestamp!
+
+    "When the agent was last updated"
+    updated_at: Timestamp!
+
+    "The contact record for this agent"
+    contact: Contact @morphOne
+
+    "Jobs associated with this agent (paginated, filterable, sortable)"
+    jobs(
+        "Filter jobs by specific conditions"
+        where: _ @whereConditions(columns: [
+            "status",
+            "project_title",
+            "brand_name",
+            "category",
+            "session_date",
+            "delivery_deadline",
+            "created_at",
+            "updated_at"
+        ])
+
+        "Sort jobs by specific columns"
+        orderBy: _ @orderBy(columns: [
+            "created_at",
+            "updated_at",
+            "session_date",
+            "delivery_deadline",
+            "project_title",
+            "status"
+        ])
+
+        "Number of items per page"
+        first: Int = 20
+
+        "Page number"
+        page: Int
+    ): [Job!]! @hasManyThrough(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for creating an agent contact in one mutation"
+input CreateAgentContactInput {
+    "Contact name"
+    name: String!
+
+    "Email"
+    email: String
+
+    "Phone"
+    phone: String
+
+    "Phone extension"
+    phone_ext: String
+
+    "Street address"
+    address_street: String
+
+    "City"
+    address_city: String
+
+    "State/Region"
+    address_state: String
+
+    "Country"
+    address_country: String
+
+    "Postal code"
+    address_postal: String
+
+    "Last contacted timestamp"
+    last_contacted_at: Timestamp
+}
+
+"Input for updating an agent contact"
+input UpdateAgentContactInput {
+    "Contact name"
+    name: String
+
+    "Email"
+    email: String
+
+    "Phone"
+    phone: String
+
+    "Phone extension"
+    phone_ext: String
+
+    "Street address"
+    address_street: String
+
+    "City"
+    address_city: String
+
+    "State/Region"
+    address_state: String
+
+    "Country"
+    address_country: String
+
+    "Postal code"
+    address_postal: String
+
+    "Last contacted timestamp"
+    last_contacted_at: Timestamp
+}
+
+"Input for creating an agent and primary contact in one mutation"
+input CreateAgentWithContactInput {
+    "Contact data"
+    contact: CreateAgentContactInput!
+
+    "Agency name"
+    agency_name: String
+
+    "Commission rate in basis points"
+    commission_rate: Int
+
+    "Territories covered by the agent"
+    territories: [String!]
+
+    "Whether this agent is exclusive"
+    is_exclusive: Boolean
+
+    "Contract start date"
+    contract_start: Timestamp
+
+    "Contract end date"
+    contract_end: Timestamp
+}
+
+"Input for updating an agent and/or primary contact"
+input UpdateAgentWithContactInput {
+    "Contact data"
+    contact: UpdateAgentContactInput
+
+    "Agency name"
+    agency_name: String
+
+    "Commission rate in basis points"
+    commission_rate: Int
+
+    "Territories covered by the agent"
+    territories: [String!]
+
+    "Whether this agent is exclusive"
+    is_exclusive: Boolean
+
+    "Contract start date"
+    contract_start: Timestamp
+
+    "Contract end date"
+    contract_end: Timestamp
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single agent by ID"
+    agent(id: ULID! @eq): Agent @find @guard
+
+    "List all agents for authenticated user"
+    agents(first: Int = 20, page: Int): [Agent!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new agent and its primary contact"
+    createAgent(input: CreateAgentWithContactInput!): Agent!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\AgentMutations@create")
+
+    "Update an agent and/or its primary contact"
+    updateAgent(id: ULID!, input: UpdateAgentWithContactInput!): Agent
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\AgentMutations@update")
+
+    "Delete an agent"
+    deleteAgent(id: ULID! @whereKey): Agent
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}

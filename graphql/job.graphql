@@ -1,0 +1,249 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Job status enum"
+enum JobStatus {
+    BOOKED @enum(value: "booked")
+    IN_PROGRESS @enum(value: "in_progress")
+    DELIVERED @enum(value: "delivered")
+    REVISION @enum(value: "revision")
+    COMPLETED @enum(value: "completed")
+    CANCELLED @enum(value: "cancelled")
+}
+
+"Voice over job/project"
+type Job {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    "Audition ID"
+    audition_id: ULID
+
+    "Client contact ID"
+    client_id: ULID!
+
+    "Agent contact ID"
+    agent_id: ULID
+
+    "Project title"
+    project_title: String!
+
+    "Brand name"
+    brand_name: String
+
+    "Character name"
+    character_name: String
+
+    "Category"
+    category: ProjectCategory!
+
+    "Word count"
+    word_count: Int
+
+    "Contracted rate"
+    contracted_rate: MonetaryAmount! @field(resolver: "App\\GraphQL\\Resolvers\\MonetaryAmountResolver@resolve")
+
+    "Rate type"
+    rate_type: RateType!
+
+    "Estimated hours"
+    estimated_hours: Float
+
+    "Actual hours"
+    actual_hours: Float
+
+    "Session date"
+    session_date: Timestamp
+
+    "Delivery deadline"
+    delivery_deadline: Timestamp
+
+    "Delivery timestamp"
+    delivered_at: Timestamp
+
+    "Archive timestamp (null when active)"
+    archived_at: Timestamp
+
+    "Job status"
+    status: JobStatus!
+
+    "When the job was created"
+    created_at: Timestamp!
+
+    "When the job was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this job"
+    user: User! @belongsTo
+
+    "The audition this job came from"
+    audition: Audition @belongsTo
+
+    "The client contact"
+    client: Contact! @belongsTo(relation: "client")
+
+    "The agent contact"
+    agent: Contact @belongsTo(relation: "agent")
+
+    "Usage rights for the job"
+    usageRights: [UsageRight!]! @morphMany
+
+    "Attachments for the job"
+    attachments: [Attachment!]! @morphMany
+
+    "Notes for the job (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+
+    "Invoices for this job"
+    invoices: [Invoice!]! @hasMany
+}
+
+"Input for linking an audition during job creation"
+input CreateJobAuditionRelationInput {
+    id: ULID!
+}
+
+"Input for contactable data used in nested relationship creation"
+input CreateJobContactableInput {
+    client: CreateClientInput
+    agent: CreateJobAgentInput
+}
+
+"Input for agent data used in nested relationship creation"
+input CreateJobAgentInput {
+    agency_name: String
+    commission_rate: Int
+    territories: [String!]
+    is_exclusive: Boolean
+    contract_start: Timestamp
+    contract_end: Timestamp
+}
+
+"Input for contact data used in nested relationship creation"
+input CreateJobContactInput {
+    name: String!
+    email: String
+    phone: String
+    phone_ext: String
+    address_street: String
+    address_city: String
+    address_state: String
+    address_country: String
+    address_postal: String
+    last_contacted_at: Timestamp
+    contactable: CreateJobContactableInput!
+}
+
+"Input for creating a client relationship during job creation"
+input CreateJobClientCreateInput {
+    contact: CreateJobContactInput!
+}
+
+"Input for resolving the client relationship during job creation"
+input CreateJobClientRelationInput {
+    id: ULID
+    create: CreateJobClientCreateInput
+}
+
+"Input for creating an agent relationship during job creation"
+input CreateJobAgentCreateInput {
+    contact: CreateJobContactInput!
+}
+
+"Input for resolving the agent relationship during job creation"
+input CreateJobAgentRelationInput {
+    id: ULID
+    create: CreateJobAgentCreateInput
+}
+
+"Input for creating a job"
+input CreateJobInput {
+    audition: CreateJobAuditionRelationInput
+    client: CreateJobClientRelationInput!
+    agent: CreateJobAgentRelationInput
+    project_title: String!
+    brand_name: String
+    character_name: String
+    category: ProjectCategory!
+    word_count: Int
+    contracted_rate: MoneyInput!
+    rate_type: RateType!
+    estimated_hours: Float
+    actual_hours: Float
+    session_date: Timestamp
+    delivery_deadline: Timestamp
+    delivered_at: Timestamp
+    status: JobStatus!
+}
+
+"Input for updating a job"
+input UpdateJobInput {
+    audition: CreateJobAuditionRelationInput
+    client: CreateJobClientRelationInput
+    agent: CreateJobAgentRelationInput
+    project_title: String
+    brand_name: String
+    character_name: String
+    category: ProjectCategory
+    word_count: Int
+    contracted_rate: MoneyInput
+    rate_type: RateType
+    estimated_hours: Float
+    actual_hours: Float
+    session_date: Timestamp
+    delivery_deadline: Timestamp
+    delivered_at: Timestamp
+    status: JobStatus
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single job by ID"
+    job(id: ULID! @eq): Job @find @guard
+
+    "List all jobs for authenticated user"
+    jobs(first: Int = 20, page: Int): [Job!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new job"
+    createJob(input: CreateJobInput!): Job!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\JobMutations@create")
+
+    "Update a job"
+    updateJob(id: ULID!, input: UpdateJobInput!): Job
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\JobMutations@update")
+
+    "Archive a job"
+    archiveJob(id: ULID!): Job
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\JobMutations@archive")
+
+    "Unarchive a job"
+    unarchiveJob(id: ULID!): Job
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\JobMutations@unarchive")
+
+    "Delete a job"
+    deleteJob(id: ULID! @whereKey): Job
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}

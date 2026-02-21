@@ -1,0 +1,99 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Invoice line item"
+type InvoiceItem {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "Invoice ID"
+    invoice_id: ULID!
+
+    "Description"
+    description: String!
+
+    "Quantity"
+    quantity: Float!
+
+    "Unit price in cents"
+    unit_price: Int!
+
+    "Amount in cents"
+    amount: Int!
+
+    """
+    Unit price converted to the user's base currency.
+    """
+    unit_price_in_base_currency: Money! @field(resolver: "App\\GraphQL\\Resolvers\\CurrencyResolver@resolve")
+    """
+    Line amount converted to the user's base currency.
+    """
+    amount_in_base_currency: Money! @field(resolver: "App\\GraphQL\\Resolvers\\CurrencyResolver@resolve")
+
+    "When the item was created"
+    created_at: Timestamp!
+
+    "When the item was last updated"
+    updated_at: Timestamp!
+
+    "The invoice this item belongs to"
+    invoice: Invoice! @belongsTo
+}
+
+"Input for creating an invoice item"
+input CreateInvoiceItemInput {
+    invoice_id: ULID!
+    description: String!
+    quantity: Float!
+    unit_price: Int!
+    amount: Int!
+}
+
+"Input for updating an invoice item"
+input UpdateInvoiceItemInput {
+    description: String
+    quantity: Float
+    unit_price: Int
+    amount: Int
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single invoice item by ID"
+    invoiceItem(id: ULID! @eq): InvoiceItem @find @guard
+
+    "List all invoice items for authenticated user"
+    invoiceItems(first: Int = 20, page: Int): [InvoiceItem!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new invoice item"
+    createInvoiceItem(input: CreateInvoiceItemInput! @spread): InvoiceItem!
+        @create
+        @guard
+
+    "Update an invoice item"
+    updateInvoiceItem(id: ULID!, input: UpdateInvoiceItemInput! @spread): InvoiceItem
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+
+    "Delete an invoice item"
+    deleteInvoiceItem(id: ULID! @whereKey): InvoiceItem
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+

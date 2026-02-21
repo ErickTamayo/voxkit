@@ -1,0 +1,2890 @@
+"User action taken on an activity item"
+type Activity {
+  "Action taken by the user (null if no action taken yet)"
+  action: ActivityAction
+
+  "When the action was created"
+  created_at: Timestamp!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Notes for this activity (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Snooze expiration timestamp"
+  snoozed_until: Timestamp
+
+  "The targetable entity for this action"
+  targetable: ActivityTargetable
+
+  "Trigger that surfaced the item"
+  trigger: ActivityTrigger!
+
+  "When the action was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this action"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"Activity state enum"
+enum ActivityAction {
+  ARCHIVED
+  SNOOZED
+}
+
+"A paginated list of Activity items."
+type ActivityPaginator {
+  "A list of Activity items."
+  data: [Activity!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Entities that can be targeted by activities"
+union ActivityTargetable = Audition | Job | Invoice | UsageRight
+
+"Activity trigger enum"
+enum ActivityTrigger {
+  AUDITION_RESPONSE_DUE
+  INVOICE_DUE_SOON
+  INVOICE_OVERDUE
+  JOB_DELIVERY_DUE
+  JOB_REVISION_REQUESTED
+  JOB_SESSION_UPCOMING
+  USAGE_RIGHTS_EXPIRING
+}
+
+"Input for adding a note"
+input AddNoteInput {
+  content: String!
+  notable_id: ULID!
+}
+
+"Representation agent details"
+type Agent {
+  "Agency name"
+  agency_name: String
+
+  "Commission rate in basis points"
+  commission_rate: Int
+
+  "The contact record for this agent"
+  contact: Contact
+
+  "Contract end date"
+  contract_end: Timestamp
+
+  "Contract start date"
+  contract_start: Timestamp
+
+  "When the agent was created"
+  created_at: Timestamp!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Whether this agent is exclusive"
+  is_exclusive: Boolean!
+
+  "Jobs associated with this agent (paginated, filterable, sortable)"
+  jobs(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "Sort jobs by specific columns"
+    orderBy: [AgentJobsOrderByOrderByClause!]
+
+    "The offset from which items are returned."
+    page: Int
+
+    "Filter jobs by specific conditions"
+    where: AgentJobsWhereWhereConditions
+  ): JobPaginator!
+
+  "Territories covered by the agent"
+  territories: [String!]
+
+  "When the agent was last updated"
+  updated_at: Timestamp!
+}
+
+"Allowed column names for Agent.jobs.orderBy."
+enum AgentJobsOrderByColumn {
+  CREATED_AT
+  DELIVERY_DEADLINE
+  PROJECT_TITLE
+  SESSION_DATE
+  STATUS
+  UPDATED_AT
+}
+
+"Order by clause for Agent.jobs.orderBy."
+input AgentJobsOrderByOrderByClause {
+  "The column that is used for ordering."
+  column: AgentJobsOrderByColumn!
+
+  "The direction that is used for ordering."
+  order: SortOrder!
+}
+
+"Allowed column names for Agent.jobs.where."
+enum AgentJobsWhereColumn {
+  BRAND_NAME
+  CATEGORY
+  CREATED_AT
+  DELIVERY_DEADLINE
+  PROJECT_TITLE
+  SESSION_DATE
+  STATUS
+  UPDATED_AT
+}
+
+"Dynamic WHERE conditions for the `where` argument of the query `jobs`."
+input AgentJobsWhereWhereConditions {
+  "A set of conditions that requires all conditions to match."
+  AND: [AgentJobsWhereWhereConditions!]
+
+  "Check whether a relation exists. Extra conditions or a minimum amount can be applied."
+  HAS: AgentJobsWhereWhereConditionsRelation
+
+  "A set of conditions that requires at least one condition to match."
+  OR: [AgentJobsWhereWhereConditions!]
+
+  "The column that is used for the condition."
+  column: AgentJobsWhereColumn
+
+  "The operator that is used for the condition."
+  operator: SQLOperator = EQ
+
+  "The value that is used for the condition."
+  value: Mixed
+}
+
+"Dynamic WHERE HAS conditions for the `where` argument of the query `jobs`."
+input AgentJobsWhereWhereConditionsHasCondition {
+  "A set of conditions that requires all conditions to match."
+  AND: [AgentJobsWhereWhereConditionsHasCondition!]
+
+  "Check whether a relation exists. Extra conditions or a minimum amount can be applied."
+  HAS: AgentJobsWhereWhereConditionsRelation
+
+  "A set of conditions that requires at least one condition to match."
+  OR: [AgentJobsWhereWhereConditionsHasCondition!]
+
+  "The column that is used for the condition."
+  column: String
+
+  "The operator that is used for the condition."
+  operator: SQLOperator = EQ
+
+  "The value that is used for the condition."
+  value: Mixed
+}
+
+"Dynamic HAS conditions for WHERE conditions for the `where` argument of the query `jobs`."
+input AgentJobsWhereWhereConditionsRelation {
+  "The amount to test."
+  amount: Int = 1
+
+  "Additional condition logic."
+  condition: AgentJobsWhereWhereConditionsHasCondition
+
+  "The comparison operator to test against the amount."
+  operator: SQLOperator = GTE
+
+  "The relation that is checked."
+  relation: String!
+}
+
+"A paginated list of Agent items."
+type AgentPaginator {
+  "A list of Agent items."
+  data: [Agent!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Input for archiving an activity"
+input ArchiveActivityInput {
+  id: ULID!
+}
+
+"Entities that can have attachments"
+union AttachableEntity = Audition | Job | Expense | Invoice | Contact
+
+"File attachment"
+type Attachment {
+  "The attached entity"
+  attachable: AttachableEntity
+
+  "ID of the attached entity matching attachable_type."
+  attachable_id: ULID!
+
+  "Polymorphic type discriminator for the attached entity (see AttachableEntity)."
+  attachable_type: String!
+
+  "Category/type of attachment"
+  category: AttachmentCategory!
+
+  "When the attachment was created"
+  created_at: Timestamp!
+
+  "Storage disk"
+  disk: String!
+
+  "Stored filename"
+  filename: String!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Metadata payload"
+  metadata: JSON
+
+  "MIME type"
+  mime_type: String!
+
+  "Original filename"
+  original_filename: String!
+
+  "Storage path"
+  path: String!
+
+  "File size in bytes"
+  size: Int!
+
+  "When the attachment was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this attachment"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"Attachment category enum"
+enum AttachmentCategory {
+  AGREEMENT
+  CONTRACT
+  DELIVERABLE
+  HEADSHOT
+  INVOICE_PDF
+  OTHER
+  RECEIPT
+  RECORDING
+  SCRIPT
+}
+
+"A paginated list of Attachment items."
+type AttachmentPaginator {
+  "A list of Attachment items."
+  data: [Attachment!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Voice over audition"
+type Audition {
+  "Attachments for this audition"
+  attachments: [Attachment!]!
+
+  "Brand name"
+  brand_name: String
+
+  "Budget maximum (cents)"
+  budget_max: Int
+
+  "Budget minimum (cents)"
+  budget_min: Int
+
+  "Category"
+  category: ProjectCategory!
+
+  "Character name"
+  character_name: String
+
+  "When the audition was created"
+  created_at: Timestamp!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Job created from this audition"
+  job: Job
+
+  "Notes for this audition (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Project deadline"
+  project_deadline: Timestamp
+
+  "Project title"
+  project_title: String!
+
+  "Quoted rate (cents)"
+  quoted_rate: Int
+
+  "Rate type"
+  rate_type: RateType!
+
+  "Response deadline"
+  response_deadline: Timestamp
+
+  "External source reference"
+  source_reference: String
+
+  "The source entity (platform or contact)"
+  sourceable: SourceableEntity
+
+  "ID of the source entity matching sourceable_type."
+  sourceable_id: ULID!
+
+  "Polymorphic type discriminator for the source entity (see SourceableEntity)."
+  sourceable_type: String!
+
+  "Audition status"
+  status: AuditionStatus!
+
+  "When the audition was submitted to the client"
+  submitted_at: Timestamp
+
+  "When the audition was last updated"
+  updated_at: Timestamp!
+
+  "Usage rights associated with this audition"
+  usageRights: [UsageRight!]!
+
+  "The user who owns this audition"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+
+  "Word count"
+  word_count: Int
+}
+
+type AuditionChartResponse implements ChartResponse {
+  "Chart data points with timestamp and count of auditions submitted"
+  chart: [ChartPoint!]!
+
+  """
+  The actual time window used for the chart.
+  Early MTD/QTD/YTD requests are automatically expanded for better visualization.
+  """
+  effectiveWindow: DateRangeWindow!
+
+  "The range of data requested - either a compact range (1W, MTD, etc.) or explicit dates"
+  range: ChartRange!
+}
+
+type AuditionMetrics {
+  """
+  Booking rate: percentage of WON auditions vs total auditions in the period.
+  Returns 0.0 if no auditions exist.
+  """
+  booking_rate: Float!
+
+  "Auditions submitted within the requested period."
+  current: AuditionMetricsSnapshot!
+}
+
+type AuditionMetricsResponse {
+  "Current audition metrics including counts and booking rate."
+  metrics: AuditionMetrics!
+
+  "The exact period boundaries used for metrics calculation (no expansion)"
+  period: DateRange!
+}
+
+type AuditionMetricsSnapshot {
+  "Total number of auditions for the comparison period immediately preceding the current range."
+  comparison_total: Int!
+
+  "Total number of auditions submitted during the period."
+  total: Int!
+
+  "Percentage change vs the comparison period's total."
+  trend_percentage: Float!
+}
+
+"A paginated list of Audition items."
+type AuditionPaginator {
+  "A list of Audition items."
+  data: [Audition!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Audition status enum"
+enum AuditionStatus {
+  CALLBACK
+  EXPIRED
+  LOST
+  PREPARING
+  RECEIVED
+  SHORTLISTED
+  SUBMITTED
+  WON
+}
+
+"Authentication mode for code-based login."
+enum AuthMode {
+  "Establish a server session for the client."
+  SESSION
+
+  "Return a bearer token in the response."
+  TOKEN
+}
+
+"Error response for code verification."
+type AuthenticateWithCodeErrorResponse {
+  "Human-readable error message."
+  message: String!
+}
+
+"Input for verifying an authentication code."
+input AuthenticateWithCodeInput {
+  "6-digit numeric authentication code."
+  code: String!
+
+  "Optional device label for token/session creation."
+  device_name: String
+
+  "Email address the code was sent to."
+  email: String!
+
+  "Auth mode that determines token vs session behavior."
+  mode: AuthMode!
+}
+
+"Success response for code verification in session mode."
+type AuthenticateWithCodeOkResponse {
+  "True when the request succeeded."
+  ok: Boolean!
+}
+
+"Union response for code verification."
+union AuthenticateWithCodeResponse = AuthenticateWithCodeOkResponse | AuthenticateWithCodeTokenResponse | AuthenticateWithCodeErrorResponse
+
+"Success response for code verification in token mode."
+type AuthenticateWithCodeTokenResponse {
+  "Bearer token for API authentication."
+  token: String!
+}
+
+"Business profile used for invoices"
+type BusinessProfile {
+  "City"
+  address_city: String
+
+  "Country"
+  address_country: String
+
+  "Postal code"
+  address_postal: String
+
+  "State/Region"
+  address_state: String
+
+  "Street address"
+  address_street: String
+
+  "Business name"
+  business_name: String
+
+  "When the profile was created"
+  created_at: Timestamp!
+
+  "Email address"
+  email: String
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Logo path"
+  logo_path: String
+
+  "Payment instructions"
+  payment_instructions: String
+
+  "Phone number"
+  phone: String
+
+  "When the profile was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this profile"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"A paginated list of BusinessProfile items."
+type BusinessProfilePaginator {
+  "A list of BusinessProfile items."
+  data: [BusinessProfile!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Generic chart point with timestamp and value - alias for TimeSeriesDataPoint"
+type ChartPoint {
+  "UTC timestamp in milliseconds representing the date/time for this data point"
+  timestamp: Timestamp!
+
+  "Value at this point in time (typically in cents for monetary values)"
+  value: Int!
+}
+
+"Union type for chart range - can be either a compact range enum or explicit date range"
+union ChartRange = CompactRangeValue | DateRange
+
+"Common interface for all chart responses with time-series data"
+interface ChartResponse {
+  "Chart data points with timestamp and value"
+  chart: [ChartPoint!]!
+
+  """
+  The actual time window used for the chart.
+  Early MTD/QTD/YTD requests are automatically expanded for better visualization.
+  """
+  effectiveWindow: DateRangeWindow!
+
+  "The range of data requested - either a compact range (1W, MTD, etc.) or explicit dates"
+  range: ChartRange!
+}
+
+"Client details"
+type Client {
+  "The contact record for this client"
+  contact: Contact
+
+  "When the client was created"
+  created_at: Timestamp!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Industry"
+  industry: String
+
+  "Payment terms"
+  payment_terms: String
+
+  "Client type"
+  type: ClientType!
+
+  "When the client was last updated"
+  updated_at: Timestamp!
+}
+
+"A paginated list of Client items."
+type ClientPaginator {
+  "A list of Client items."
+  data: [Client!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Client type enum"
+enum ClientType {
+  "Company"
+  COMPANY
+
+  "Individual"
+  INDIVIDUAL
+}
+
+"Compact predefined ranges for charting and metrics, etc."
+enum CompactRange {
+  AllTime
+  FourWeeks
+  MonthToDate
+  OneWeek
+  OneYear
+  QuarterToDate
+  YearToDate
+}
+
+"""
+Wrapper type for CompactRange enum values.
+Used in union types where both enum and complex types need to be supported.
+"""
+type CompactRangeValue {
+  value: CompactRange!
+}
+
+"Contact record"
+type Contact {
+  "City"
+  address_city: String
+
+  "Country"
+  address_country: String
+
+  "Postal code"
+  address_postal: String
+
+  "State/Region"
+  address_state: String
+
+  "Street address"
+  address_street: String
+
+  "Attachments for this contact"
+  attachments: [Attachment!]!
+
+  "The related contactable entity"
+  contactable: ContactableEntity
+
+  "ID of the related entity matching contactable_type."
+  contactable_id: ULID!
+
+  "Polymorphic type discriminator for the related entity (see ContactableEntity)."
+  contactable_type: String!
+
+  "When the contact was created"
+  created_at: Timestamp!
+
+  "Email"
+  email: String
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Last contacted timestamp"
+  last_contacted_at: Timestamp
+
+  "Contact name"
+  name: String!
+
+  "Notes for this entity (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Phone"
+  phone: String
+
+  "Phone extension"
+  phone_ext: String
+
+  "When the contact was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this contact"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"A paginated list of Contact items."
+type ContactPaginator {
+  "A list of Contact items."
+  data: [Contact!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Entities that can be assigned to a contact"
+union ContactableEntity = Agent | Client
+
+"Input for creating an agent contact in one mutation"
+input CreateAgentContactInput {
+  "City"
+  address_city: String
+
+  "Country"
+  address_country: String
+
+  "Postal code"
+  address_postal: String
+
+  "State/Region"
+  address_state: String
+
+  "Street address"
+  address_street: String
+
+  "Email"
+  email: String
+
+  "Last contacted timestamp"
+  last_contacted_at: Timestamp
+
+  "Contact name"
+  name: String!
+
+  "Phone"
+  phone: String
+
+  "Phone extension"
+  phone_ext: String
+}
+
+"Input for creating an agent and primary contact in one mutation"
+input CreateAgentWithContactInput {
+  "Agency name"
+  agency_name: String
+
+  "Commission rate in basis points"
+  commission_rate: Int
+
+  "Contact data"
+  contact: CreateAgentContactInput!
+
+  "Contract end date"
+  contract_end: Timestamp
+
+  "Contract start date"
+  contract_start: Timestamp
+
+  "Whether this agent is exclusive"
+  is_exclusive: Boolean
+
+  "Territories covered by the agent"
+  territories: [String!]
+}
+
+"Input for creating an attachment"
+input CreateAttachmentInput {
+  "ID of the attached entity matching attachable_type."
+  attachable_id: ULID!
+
+  "Polymorphic type discriminator for the attached entity (see AttachableEntity)."
+  attachable_type: String!
+  category: AttachmentCategory!
+  disk: String!
+  filename: String!
+  metadata: JSON
+  mime_type: String!
+  original_filename: String!
+  path: String!
+  size: Int!
+}
+
+"Input for creating an audition"
+input CreateAuditionInput {
+  brand_name: String
+  budget_max: Int
+  budget_min: Int
+  category: ProjectCategory!
+  character_name: String
+  project_deadline: Timestamp
+  project_title: String!
+  quoted_rate: Int
+  rate_type: RateType!
+  response_deadline: Timestamp
+  source_reference: String
+
+  "ID of the source entity matching sourceable_type."
+  sourceable_id: ULID!
+
+  "Polymorphic type discriminator for the source entity (see SourceableEntity)."
+  sourceable_type: String!
+  status: AuditionStatus!
+  submitted_at: Timestamp
+  word_count: Int
+}
+
+"Input for creating a client"
+input CreateClientInput {
+  industry: String
+  payment_terms: String
+  type: ClientType!
+}
+
+"Input for creating a contact"
+input CreateContactInput {
+  address_city: String
+  address_country: String
+  address_postal: String
+  address_state: String
+  address_street: String
+
+  "ID of the related entity matching contactable_type."
+  contactable_id: ULID!
+
+  "Polymorphic type discriminator for the related entity (see ContactableEntity)."
+  contactable_type: String!
+  email: String
+  last_contacted_at: Timestamp
+  name: String!
+  phone: String
+  phone_ext: String
+}
+
+"Input for creating an expense definition"
+input CreateExpenseDefinitionInput {
+  amount: MoneyInput!
+  category: ExpenseCategory!
+  ends_at: Timestamp
+  is_active: Boolean
+  name: String!
+  recurrence: ExpenseRecurrence!
+  recurrence_day: Int
+  starts_at: Timestamp!
+}
+
+"Input for creating an expense"
+input CreateExpenseInput {
+  amount: MoneyInput!
+  category: ExpenseCategory!
+  date: Timestamp!
+  description: String!
+  expense_definition_id: ULID
+}
+
+"Input for creating an invoice"
+input CreateInvoiceInput {
+  client_id: ULID!
+  due_at: Timestamp!
+  invoice_number: String!
+  issued_at: Timestamp!
+  job_id: ULID
+  paid_at: Timestamp
+  status: InvoiceStatus!
+  subtotal: MoneyInput!
+  tax_amount: MoneyInput
+  tax_rate: Float
+  total: MoneyInput!
+}
+
+"Input for creating an invoice item"
+input CreateInvoiceItemInput {
+  amount: Int!
+  description: String!
+  invoice_id: ULID!
+  quantity: Float!
+  unit_price: Int!
+}
+
+"Input for creating an agent relationship during job creation"
+input CreateJobAgentCreateInput {
+  contact: CreateJobContactInput!
+}
+
+"Input for agent data used in nested relationship creation"
+input CreateJobAgentInput {
+  agency_name: String
+  commission_rate: Int
+  contract_end: Timestamp
+  contract_start: Timestamp
+  is_exclusive: Boolean
+  territories: [String!]
+}
+
+"Input for resolving the agent relationship during job creation"
+input CreateJobAgentRelationInput {
+  create: CreateJobAgentCreateInput
+  id: ULID
+}
+
+"Input for linking an audition during job creation"
+input CreateJobAuditionRelationInput {
+  id: ULID!
+}
+
+"Input for creating a client relationship during job creation"
+input CreateJobClientCreateInput {
+  contact: CreateJobContactInput!
+}
+
+"Input for resolving the client relationship during job creation"
+input CreateJobClientRelationInput {
+  create: CreateJobClientCreateInput
+  id: ULID
+}
+
+"Input for contact data used in nested relationship creation"
+input CreateJobContactInput {
+  address_city: String
+  address_country: String
+  address_postal: String
+  address_state: String
+  address_street: String
+  contactable: CreateJobContactableInput!
+  email: String
+  last_contacted_at: Timestamp
+  name: String!
+  phone: String
+  phone_ext: String
+}
+
+"Input for contactable data used in nested relationship creation"
+input CreateJobContactableInput {
+  agent: CreateJobAgentInput
+  client: CreateClientInput
+}
+
+"Input for creating a job"
+input CreateJobInput {
+  actual_hours: Float
+  agent: CreateJobAgentRelationInput
+  audition: CreateJobAuditionRelationInput
+  brand_name: String
+  category: ProjectCategory!
+  character_name: String
+  client: CreateJobClientRelationInput!
+  contracted_rate: MoneyInput!
+  delivered_at: Timestamp
+  delivery_deadline: Timestamp
+  estimated_hours: Float
+  project_title: String!
+  rate_type: RateType!
+  session_date: Timestamp
+  status: JobStatus!
+  word_count: Int
+}
+
+"Input for creating a platform"
+input CreatePlatformInput {
+  external_id: String
+  name: String!
+  url: String
+  username: String
+}
+
+"Input for creating usage rights"
+input CreateUsageRightInput {
+  ai_rights_granted: Boolean
+  duration_months: Int
+  duration_type: DurationType!
+  exclusivity: Boolean
+  exclusivity_category: String
+  expiration_date: Timestamp
+  geographic_scope: GeographicScope!
+  media_types: [UsageMediaType!]!
+  renewal_reminder_sent: Boolean
+  start_date: Timestamp
+  type: UsageType!
+
+  "ID of the usable entity matching usable_type."
+  usable_id: ULID!
+
+  "Polymorphic type discriminator for the usable entity (see UsableEntity)."
+  usable_type: String!
+}
+
+"A date range with start and end timestamps"
+type DateRange {
+  "End date/time in UTC milliseconds"
+  end: Timestamp!
+
+  "Start date/time in UTC milliseconds"
+  start: Timestamp!
+}
+
+"Describes the actual date range used for chart data"
+type DateRangeWindow {
+  daysInRange: Int!
+  end: Timestamp!
+  expansionReason: String
+  start: Timestamp!
+  wasExpanded: Boolean!
+}
+
+"Duration type enum"
+enum DurationType {
+  FIXED
+  PERPETUAL
+}
+
+"Expense record"
+type Expense {
+  "Monetary amount with original and converted values"
+  amount: MonetaryAmount!
+
+  "Attachments for this expense"
+  attachments: [Attachment!]!
+
+  "Category"
+  category: ExpenseCategory!
+
+  "When the expense was created"
+  created_at: Timestamp!
+
+  "Expense date"
+  date: Timestamp!
+
+  "Description"
+  description: String!
+
+  "The expense definition"
+  expenseDefinition: ExpenseDefinition
+
+  "Expense definition ID"
+  expense_definition_id: ULID
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Notes for this entity (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "When the expense was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this expense"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"Expense category enum"
+enum ExpenseCategory {
+  EQUIPMENT
+  MARKETING
+  MEMBERSHIP
+  OFFICE
+  OTHER
+  PROFESSIONAL_SERVICES
+  SOFTWARE
+  STUDIO
+  TRAINING
+  TRAVEL
+}
+
+"Expense definition (recurring or template)"
+type ExpenseDefinition {
+  "Template amount"
+  amount: MonetaryAmount!
+
+  "Category"
+  category: ExpenseCategory!
+
+  "When the definition was created"
+  created_at: Timestamp!
+
+  "End date"
+  ends_at: Timestamp
+
+  "Expenses created from this definition"
+  expenses: [Expense!]!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Is active"
+  is_active: Boolean!
+
+  "Name"
+  name: String!
+
+  "Notes for this expense definition (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Recurrence"
+  recurrence: ExpenseRecurrence!
+
+  "Recurrence day"
+  recurrence_day: Int
+
+  "Start date"
+  starts_at: Timestamp!
+
+  "When the definition was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this definition"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"A paginated list of ExpenseDefinition items."
+type ExpenseDefinitionPaginator {
+  "A list of ExpenseDefinition items."
+  data: [ExpenseDefinition!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"A paginated list of Expense items."
+type ExpensePaginator {
+  "A list of Expense items."
+  data: [Expense!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Expense recurrence enum"
+enum ExpenseRecurrence {
+  MONTHLY
+  ONE_OFF
+  WEEKLY
+  YEARLY
+}
+
+"Geographic scope enum"
+enum GeographicScope {
+  LOCAL
+  MULTI_NATIONAL
+  NATIONAL
+  REGIONAL
+  WORLDWIDE
+}
+
+"Invoice for a job"
+type Invoice {
+  "Attachments for this invoice"
+  attachments: [Attachment!]!
+
+  "The client contact"
+  client: Contact!
+
+  "Client contact ID"
+  client_id: ULID!
+
+  "When the invoice was created"
+  created_at: Timestamp!
+
+  "Due date"
+  due_at: Timestamp!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Invoice line items"
+  invoiceItems: [InvoiceItem!]!
+
+  "Invoice number"
+  invoice_number: String!
+
+  "Issued date"
+  issued_at: Timestamp!
+
+  "The job this invoice belongs to"
+  job: Job
+
+  "Job ID"
+  job_id: ULID
+
+  "Notes for this entity (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Paid date"
+  paid_at: Timestamp
+
+  "Invoice status"
+  status: InvoiceStatus!
+
+  "Subtotal"
+  subtotal: MonetaryAmount!
+
+  "Tax amount"
+  tax_amount: MonetaryAmount
+
+  "Tax rate (decimal)"
+  tax_rate: Float
+
+  "Total"
+  total: MonetaryAmount!
+
+  "When the invoice was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this invoice"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"Invoice line item"
+type InvoiceItem {
+  "Amount in cents"
+  amount: Int!
+
+  "Line amount converted to the user's base currency."
+  amount_in_base_currency: Money!
+
+  "When the item was created"
+  created_at: Timestamp!
+
+  "Description"
+  description: String!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "The invoice this item belongs to"
+  invoice: Invoice!
+
+  "Invoice ID"
+  invoice_id: ULID!
+
+  "Quantity"
+  quantity: Float!
+
+  "Unit price in cents"
+  unit_price: Int!
+
+  "Unit price converted to the user's base currency."
+  unit_price_in_base_currency: Money!
+
+  "When the item was last updated"
+  updated_at: Timestamp!
+}
+
+"A paginated list of InvoiceItem items."
+type InvoiceItemPaginator {
+  "A list of InvoiceItem items."
+  data: [InvoiceItem!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"A paginated list of Invoice items."
+type InvoicePaginator {
+  "A list of Invoice items."
+  data: [Invoice!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Invoice status enum"
+enum InvoiceStatus {
+  CANCELLED
+  DRAFT
+  OVERDUE
+  PAID
+  SENT
+}
+
+"Arbitrary JSON value."
+scalar JSON
+
+"Voice over job/project"
+type Job {
+  "Actual hours"
+  actual_hours: Float
+
+  "The agent contact"
+  agent: Contact
+
+  "Agent contact ID"
+  agent_id: ULID
+
+  "Archive timestamp (null when active)"
+  archived_at: Timestamp
+
+  "Attachments for the job"
+  attachments: [Attachment!]!
+
+  "The audition this job came from"
+  audition: Audition
+
+  "Audition ID"
+  audition_id: ULID
+
+  "Brand name"
+  brand_name: String
+
+  "Category"
+  category: ProjectCategory!
+
+  "Character name"
+  character_name: String
+
+  "The client contact"
+  client: Contact!
+
+  "Client contact ID"
+  client_id: ULID!
+
+  "Contracted rate"
+  contracted_rate: MonetaryAmount!
+
+  "When the job was created"
+  created_at: Timestamp!
+
+  "Delivery timestamp"
+  delivered_at: Timestamp
+
+  "Delivery deadline"
+  delivery_deadline: Timestamp
+
+  "Estimated hours"
+  estimated_hours: Float
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Invoices for this job"
+  invoices: [Invoice!]!
+
+  "Notes for the job (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Project title"
+  project_title: String!
+
+  "Rate type"
+  rate_type: RateType!
+
+  "Session date"
+  session_date: Timestamp
+
+  "Job status"
+  status: JobStatus!
+
+  "When the job was last updated"
+  updated_at: Timestamp!
+
+  "Usage rights for the job"
+  usageRights: [UsageRight!]!
+
+  "The user who owns this job"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+
+  "Word count"
+  word_count: Int
+}
+
+"A paginated list of Job items."
+type JobPaginator {
+  "A list of Job items."
+  data: [Job!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Job status enum"
+enum JobStatus {
+  BOOKED
+  CANCELLED
+  COMPLETED
+  DELIVERED
+  IN_PROGRESS
+  REVISION
+}
+
+"""
+Loose type that allows any value. Be careful when passing in large `Int` or `Float` literals,
+as they may not be parsed correctly on the server side. Use `String` literals if you are
+dealing with really large numbers to be on the safe side.
+"""
+scalar Mixed
+
+"A monetary amount with both original and converted values"
+type MonetaryAmount {
+  "Value converted to the user's base currency"
+  converted: Money!
+
+  "Original value as stored in the database"
+  original: Money!
+}
+
+"Represents a monetary value in a specific currency"
+type Money {
+  "The amount in cents"
+  amount_cents: Int!
+
+  "The currency code (e.g. USD, CAD)"
+  currency: String!
+
+  "Precision of the conversion: EXACT (rate found for date) or ESTIMATED (fallback rate used)"
+  precision: Precision!
+}
+
+"Input for monetary values"
+input MoneyInput {
+  "Amount in cents"
+  amount_cents: Int!
+
+  "Currency code (ISO 4217)"
+  currency: String!
+}
+
+"Root mutation type"
+type Mutation {
+  "Add a note to an entity"
+  addNote(input: AddNoteInput!): Note!
+
+  "Archive an activity for the authenticated user"
+  archiveActivity(input: ArchiveActivityInput!): Activity!
+
+  "Archive a job"
+  archiveJob(id: ULID!): Job
+
+  "Verify an auth code and authenticate the user"
+  authenticateWithCode(input: AuthenticateWithCodeInput!): AuthenticateWithCodeResponse!
+
+  "Create a new agent and its primary contact"
+  createAgent(input: CreateAgentWithContactInput!): Agent!
+
+  "Create a new attachment"
+  createAttachment(input: CreateAttachmentInput!): Attachment!
+
+  "Create a new audition"
+  createAudition(input: CreateAuditionInput!): Audition!
+
+  "Create a new client"
+  createClient(input: CreateClientInput!): Client!
+
+  "Create a new contact"
+  createContact(input: CreateContactInput!): Contact!
+
+  "Create a new expense"
+  createExpense(input: CreateExpenseInput!): Expense!
+
+  "Create a new expense definition"
+  createExpenseDefinition(input: CreateExpenseDefinitionInput!): ExpenseDefinition!
+
+  "Create a new invoice"
+  createInvoice(input: CreateInvoiceInput!): Invoice!
+
+  "Create a new invoice item"
+  createInvoiceItem(input: CreateInvoiceItemInput!): InvoiceItem!
+
+  "Create a new job"
+  createJob(input: CreateJobInput!): Job!
+
+  "Create a new platform"
+  createPlatform(input: CreatePlatformInput!): Platform!
+
+  "Create a new usage right"
+  createUsageRight(input: CreateUsageRightInput!): UsageRight!
+
+  "Delete an agent"
+  deleteAgent(id: ULID!): Agent
+
+  "Delete an attachment"
+  deleteAttachment(id: ULID!): Attachment
+
+  "Delete an audition"
+  deleteAudition(id: ULID!): Audition
+
+  "Delete a client"
+  deleteClient(id: ULID!): Client
+
+  "Delete a contact"
+  deleteContact(id: ULID!): Contact
+
+  "Delete an expense"
+  deleteExpense(id: ULID!): Expense
+
+  "Delete an expense definition"
+  deleteExpenseDefinition(id: ULID!): ExpenseDefinition
+
+  "Delete an invoice"
+  deleteInvoice(id: ULID!): Invoice
+
+  "Delete an invoice item"
+  deleteInvoiceItem(id: ULID!): InvoiceItem
+
+  "Delete a job"
+  deleteJob(id: ULID!): Job
+
+  "Delete a note"
+  deleteNote(id: ULID!): Note
+
+  "Delete a platform"
+  deletePlatform(id: ULID!): Platform
+
+  "Delete a usage right"
+  deleteUsageRight(id: ULID!): UsageRight
+
+  "Request an auth code for an existing user"
+  requestAuthenticationCode(input: RequestAuthenticationCodeInput!): RequestAuthenticationCodeResponse!
+
+  "Revoke the current token/session"
+  revokeToken: RevokeTokenResponse!
+
+  "Register a new user and send an auth code"
+  signUpAndRequestAuthenticationToken(input: SignUpAndRequestAuthenticationTokenInput!): SignUpAndRequestAuthenticationTokenResponse!
+
+  "Snooze an activity for the authenticated user"
+  snoozeActivity(input: SnoozeActivityInput!): Activity!
+
+  "Unarchive a job"
+  unarchiveJob(id: ULID!): Job
+
+  "Update an agent and/or its primary contact"
+  updateAgent(id: ULID!, input: UpdateAgentWithContactInput!): Agent
+
+  "Update an attachment"
+  updateAttachment(id: ULID!, input: UpdateAttachmentInput!): Attachment
+
+  "Update an audition"
+  updateAudition(id: ULID!, input: UpdateAuditionInput!): Audition
+
+  "Update a business profile"
+  updateBusinessProfile(id: ULID!, input: UpdateBusinessProfileInput!): BusinessProfile
+
+  "Update a client"
+  updateClient(id: ULID!, input: UpdateClientInput!): Client
+
+  "Update a contact"
+  updateContact(id: ULID!, input: UpdateContactInput!): Contact
+
+  "Update an expense"
+  updateExpense(id: ULID!, input: UpdateExpenseInput!): Expense
+
+  "Update an expense definition"
+  updateExpenseDefinition(id: ULID!, input: UpdateExpenseDefinitionInput!): ExpenseDefinition
+
+  "Update an invoice"
+  updateInvoice(id: ULID!, input: UpdateInvoiceInput!): Invoice
+
+  "Update an invoice item"
+  updateInvoiceItem(id: ULID!, input: UpdateInvoiceItemInput!): InvoiceItem
+
+  "Update a job"
+  updateJob(id: ULID!, input: UpdateJobInput!): Job
+
+  "Update the authenticated user's profile"
+  updateMe(input: UpdateUserInput!): User!
+
+  "Update the authenticated user's settings"
+  updateMySettings(input: UpdateSettingsInput!): Settings!
+
+  "Update a note"
+  updateNote(id: ULID!, input: UpdateNoteInput!): Note
+
+  "Update a platform"
+  updatePlatform(id: ULID!, input: UpdatePlatformInput!): Platform
+
+  "Update a usage right"
+  updateUsageRight(id: ULID!, input: UpdateUsageRightInput!): UsageRight
+}
+
+"Entities that can have notes"
+union NotableEntity = Audition | Job | Contact | Invoice | Expense | ExpenseDefinition | UsageRight | Activity | Platform
+
+"User note attached to an entity"
+type Note {
+  "Content of the note"
+  content: String!
+
+  "When the note was created"
+  created_at: Timestamp!
+
+  "When the note was soft deleted"
+  deleted_at: Timestamp
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "The notable entity for this note"
+  notable: NotableEntity
+
+  "ID of the notable entity matching notable_type."
+  notable_id: ULID!
+
+  "Polymorphic type discriminator for the notable entity (see NotableEntity)."
+  notable_type: String!
+
+  "When the note was last updated"
+  updated_at: Timestamp!
+
+  "The user who owns this note"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+}
+
+"A paginated list of Note items."
+type NotePaginator {
+  "A list of Note items."
+  data: [Note!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Allows ordering a list of records."
+input OrderByClause {
+  "The column that is used for ordering."
+  column: String!
+
+  "The direction that is used for ordering."
+  order: SortOrder!
+}
+
+"Aggregate functions when ordering by a relation without specifying a column."
+enum OrderByRelationAggregateFunction {
+  "Amount of items."
+  COUNT
+}
+
+"Aggregate functions when ordering by a relation that may specify a column."
+enum OrderByRelationWithColumnAggregateFunction {
+  "Average."
+  AVG
+
+  "Amount of items."
+  COUNT
+
+  "Maximum."
+  MAX
+
+  "Minimum."
+  MIN
+
+  "Sum."
+  SUM
+}
+
+"Information about pagination using a fully featured paginator."
+type PaginatorInfo {
+  "Number of items in the current page."
+  count: Int!
+
+  "Index of the current page."
+  currentPage: Int!
+
+  "Index of the first item in the current page."
+  firstItem: Int
+
+  "Are there more pages after this one?"
+  hasMorePages: Boolean!
+
+  "Index of the last item in the current page."
+  lastItem: Int
+
+  "Index of the last available page."
+  lastPage: Int!
+
+  "Number of items per page."
+  perPage: Int!
+
+  "Number of total available items."
+  total: Int!
+}
+
+"Pay-to-play platform"
+type Platform {
+  "Auditions sourced from this platform"
+  auditions: [Audition!]!
+
+  "When the platform was created"
+  created_at: Timestamp!
+
+  "External platform ID"
+  external_id: String
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Platform name"
+  name: String!
+
+  "Notes for this platform (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "When the platform was last updated"
+  updated_at: Timestamp!
+
+  "Platform URL"
+  url: String
+
+  "The user who owns this platform"
+  user: User!
+
+  "User ID"
+  user_id: ULID!
+
+  "Username on platform"
+  username: String
+}
+
+"A paginated list of Platform items."
+type PlatformPaginator {
+  "A list of Platform items."
+  data: [Platform!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Precision level of currency conversion"
+enum Precision {
+  ESTIMATED
+  EXACT
+}
+
+"Project category enum"
+enum ProjectCategory {
+  ANIMATION
+  ANNOUNCEMENT
+  AUDIOBOOK
+  COACHING
+  COMMERCIAL
+  CORPORATE
+  DOCUMENTARY
+  DUBBING
+  ELEARNING
+  EXPLAINER
+  FILM
+  IVR
+  MEDITATION
+  NARRATION
+  OTHER
+  PODCAST
+  PROMO
+  RADIO_IMAGING
+  TRAILER
+  TV_SERIES
+  UNKNOWN
+  VIDEO_GAME
+}
+
+"Indicates what fields are available at the top level of a query operation."
+type Query {
+  "List activities for authenticated user"
+  activities(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+
+    where: QueryActivitiesWhereWhereConditions
+  ): ActivityPaginator!
+
+  "Get a single agent by ID"
+  agent(id: ULID!): Agent
+
+  "List all agents for authenticated user"
+  agents(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): AgentPaginator!
+
+  "Get a single attachment by ID"
+  attachment(id: ULID!): Attachment
+
+  "List all attachments for authenticated user"
+  attachments(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): AttachmentPaginator!
+
+  "Get a single audition by ID"
+  audition(id: ULID!): Audition
+
+  """
+  Get audition chart data with intelligent time window expansion.
+  Backend determines optimal visualization window (e.g., MTD on day 3 = 30 days).
+  Returns only chart points showing auditions submitted over time.
+  """
+  auditionChart(period: CompactRange! = OneWeek): AuditionChartResponse!
+
+  """
+  Get audition metrics with strict period boundaries.
+  MTD = exactly month start to today, no expansion.
+  Returns audition count with trends and booking rate.
+  """
+  auditionMetrics(period: CompactRange! = OneWeek): AuditionMetricsResponse!
+
+  "List all auditions for authenticated user"
+  auditions(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): AuditionPaginator!
+
+  "Get a single business profile by ID"
+  businessProfile(id: ULID!): BusinessProfile
+
+  "List all business profiles for authenticated user"
+  businessProfiles(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): BusinessProfilePaginator!
+
+  "Get a single client by ID"
+  client(id: ULID!): Client
+
+  "List all clients for authenticated user"
+  clients(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): ClientPaginator!
+
+  "Get a single contact by ID"
+  contact(id: ULID!): Contact
+
+  "List all contacts for authenticated user"
+  contacts(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): ContactPaginator!
+
+  "Get a single expense by ID"
+  expense(id: ULID!): Expense
+
+  "Get a single expense definition by ID"
+  expenseDefinition(id: ULID!): ExpenseDefinition
+
+  "List all expense definitions for authenticated user"
+  expenseDefinitions(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): ExpenseDefinitionPaginator!
+
+  "List all expenses for authenticated user"
+  expenses(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): ExpensePaginator!
+
+  "Get a single invoice by ID"
+  invoice(id: ULID!): Invoice
+
+  "Get a single invoice item by ID"
+  invoiceItem(id: ULID!): InvoiceItem
+
+  "List all invoice items for authenticated user"
+  invoiceItems(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): InvoiceItemPaginator!
+
+  "List all invoices for authenticated user"
+  invoices(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): InvoicePaginator!
+
+  "Get a single job by ID"
+  job(id: ULID!): Job
+
+  "List all jobs for authenticated user"
+  jobs(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): JobPaginator!
+
+  "Get the authenticated user"
+  me: User!
+
+  "Get settings for the authenticated user"
+  mySettings: Settings
+
+  "Get a single note by ID"
+  note(id: ULID!): Note
+
+  "List all notes for authenticated user"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Get a single platform by ID"
+  platform(id: ULID!): Platform
+
+  "List all platforms for authenticated user"
+  platforms(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): PlatformPaginator!
+
+  """
+  Get revenue grouped by project category.
+  Paid revenue is period-bound; in-flight revenue is a snapshot.
+  Returns the top `take` categories by total (paid + in-flight).
+  """
+  revenueByCategory(baseCurrency: String, period: CompactRange! = OneWeek, take: Int = 10): RevenueByCategoryResponse!
+
+  """
+  Get revenue grouped by source (platforms, agents, direct clients).
+  Paid revenue is period-bound; in-flight revenue is a snapshot.
+  Returns the top `take` sources by total (paid + in-flight).
+  """
+  revenueBySource(baseCurrency: String, period: CompactRange! = OneWeek, take: Int = 10): RevenueBySourceResponse!
+
+  """
+  Get revenue chart data with intelligent time window expansion.
+  Backend determines optimal visualization window (e.g., MTD on day 3 = 30 days).
+  Returns only chart points, no metrics.
+  """
+  revenueChart(baseCurrency: String, period: CompactRange! = OneWeek): RevenueChartResponse!
+
+  """
+  Get revenue metrics with strict period boundaries.
+  MTD = exactly month start to today, no expansion.
+  Returns current/pipeline/in-flight revenue with trends and comparisons.
+  """
+  revenueMetrics(baseCurrency: String, period: CompactRange! = OneWeek): RevenueMetricsResponse!
+
+  "Run a user-scoped full-text search across one or many entity types."
+  search(
+    "Maximum number of results (1-50)."
+    first: Int = 20
+
+    "1-based page number."
+    page: Int = 1
+
+    "Search text to match."
+    query: String = ""
+
+    "Optional entity type filters."
+    types: [SearchEntityType!]
+  ): SearchResultPaginator!
+
+  "Get a single usage right by ID"
+  usageRight(id: ULID!): UsageRight
+
+  "List all usage rights for authenticated user"
+  usageRights(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): UsageRightPaginator!
+}
+
+"Allowed column names for Query.activities.where."
+enum QueryActivitiesWhereColumn {
+  ACTION
+  SNOOZED_UNTIL
+}
+
+"Dynamic WHERE conditions for the `where` argument of the query `activities`."
+input QueryActivitiesWhereWhereConditions {
+  "A set of conditions that requires all conditions to match."
+  AND: [QueryActivitiesWhereWhereConditions!]
+
+  "Check whether a relation exists. Extra conditions or a minimum amount can be applied."
+  HAS: QueryActivitiesWhereWhereConditionsRelation
+
+  "A set of conditions that requires at least one condition to match."
+  OR: [QueryActivitiesWhereWhereConditions!]
+
+  "The column that is used for the condition."
+  column: QueryActivitiesWhereColumn
+
+  "The operator that is used for the condition."
+  operator: SQLOperator = EQ
+
+  "The value that is used for the condition."
+  value: Mixed
+}
+
+"Dynamic WHERE HAS conditions for the `where` argument of the query `activities`."
+input QueryActivitiesWhereWhereConditionsHasCondition {
+  "A set of conditions that requires all conditions to match."
+  AND: [QueryActivitiesWhereWhereConditionsHasCondition!]
+
+  "Check whether a relation exists. Extra conditions or a minimum amount can be applied."
+  HAS: QueryActivitiesWhereWhereConditionsRelation
+
+  "A set of conditions that requires at least one condition to match."
+  OR: [QueryActivitiesWhereWhereConditionsHasCondition!]
+
+  "The column that is used for the condition."
+  column: String
+
+  "The operator that is used for the condition."
+  operator: SQLOperator = EQ
+
+  "The value that is used for the condition."
+  value: Mixed
+}
+
+"Dynamic HAS conditions for WHERE conditions for the `where` argument of the query `activities`."
+input QueryActivitiesWhereWhereConditionsRelation {
+  "The amount to test."
+  amount: Int = 1
+
+  "Additional condition logic."
+  condition: QueryActivitiesWhereWhereConditionsHasCondition
+
+  "The comparison operator to test against the amount."
+  operator: SQLOperator = GTE
+
+  "The relation that is checked."
+  relation: String!
+}
+
+"Rate type enum"
+enum RateType {
+  BUYOUT
+  FLAT
+  HOURLY
+  PER_FINISHED_HOUR
+  PER_LINE
+  PER_WORD
+}
+
+"Error response for code request."
+type RequestAuthenticationCodeErrorResponse {
+  "Human-readable error message."
+  message: String!
+}
+
+"Input for requesting an authentication code for an existing user."
+input RequestAuthenticationCodeInput {
+  "Email address to receive the authentication code."
+  email: String!
+}
+
+"Success response for code request."
+type RequestAuthenticationCodeOkResponse {
+  "True when the request succeeded."
+  ok: Boolean!
+}
+
+"Union response for code request."
+union RequestAuthenticationCodeResponse = RequestAuthenticationCodeOkResponse | RequestAuthenticationCodeErrorResponse
+
+type RevenueByCategoryEntry {
+  "Project category for the revenue bucket."
+  category: ProjectCategory!
+
+  "In-flight revenue snapshot (unpaid invoices + unbilled active jobs)."
+  in_flight: Money!
+
+  "Paid revenue within the requested period."
+  paid: Money!
+
+  "Percentage of total (paid + in-flight) for this category."
+  percentage_of_total: Float!
+}
+
+type RevenueByCategoryResponse {
+  "Base currency used for all metrics totals."
+  baseCurrency: String!
+
+  "Revenue grouped by project category."
+  categories: [RevenueByCategoryEntry!]!
+
+  "The exact period boundaries used for paid revenue (no expansion)."
+  period: DateRange!
+}
+
+type RevenueBySourceEntry {
+  "In-flight revenue snapshot (unpaid invoices + unbilled active jobs)."
+  in_flight: Money!
+
+  "Paid revenue within the requested period."
+  paid: Money!
+
+  "Percentage of total (paid + in-flight) for this source."
+  percentage_of_total: Float!
+
+  "Human-readable label for the source (platform, agent, direct client, or unknown)."
+  source_name: String!
+
+  "The type of source (platform, agent, direct client, or unknown)."
+  source_type: RevenueSourceType!
+}
+
+type RevenueBySourceResponse {
+  "Base currency used for all metrics totals."
+  baseCurrency: String!
+
+  "The exact period boundaries used for paid revenue (no expansion)."
+  period: DateRange!
+
+  "Revenue grouped by source."
+  sources: [RevenueBySourceEntry!]!
+}
+
+type RevenueChartResponse implements ChartResponse {
+  "Currency used for revenue calculations"
+  baseCurrency: String!
+
+  "Chart data points with timestamp and value"
+  chart: [ChartPoint!]!
+
+  """
+  The actual time window used for the chart.
+  Early MTD/QTD/YTD requests are automatically expanded for better visualization.
+  """
+  effectiveWindow: DateRangeWindow!
+
+  "The range of data requested - either a compact range (1W, MTD, etc.) or explicit dates"
+  range: ChartRange!
+}
+
+type RevenueMetrics {
+  "Paid revenue within the requested period."
+  current: RevenueMetricsSnapshot!
+
+  "Money still expected to be collected (unpaid invoices + unbilled active jobs)."
+  in_flight: RevenuePipelineMetrics!
+
+  "Value of active jobs (pipeline snapshot, not period-bound)."
+  pipeline: RevenuePipelineMetrics!
+}
+
+type RevenueMetricsResponse {
+  "Base currency used for all metrics totals."
+  baseCurrency: String!
+
+  "Current, pipeline, and in-flight revenue metrics."
+  metrics: RevenueMetrics!
+
+  "The exact period boundaries used for metrics calculation (no expansion)"
+  period: DateRange!
+}
+
+type RevenueMetricsSnapshot {
+  "Total revenue for the comparison period immediately preceding the current range."
+  comparison_total: Money!
+
+  "Precision of the aggregated total (EXACT when all conversions are exact)."
+  precision: Precision!
+
+  "Total revenue for the period, in the requested base currency."
+  total: Money!
+
+  "Percentage change vs the comparison period's total."
+  trend_percentage: Float!
+}
+
+"Lightweight metrics for pipeline-style totals (no trend or comparisons)."
+type RevenuePipelineMetrics {
+  "Precision of the aggregated total (EXACT when all conversions are exact)."
+  precision: Precision!
+
+  "Total value in the requested base currency."
+  total: Money!
+}
+
+enum RevenueSourceType {
+  AGENT
+  DIRECT
+  PLATFORM
+  UNKNOWN
+}
+
+"Error response for token/session revocation."
+type RevokeTokenErrorResponse {
+  "Human-readable error message."
+  message: String!
+}
+
+"Success response for token/session revocation."
+type RevokeTokenOkResponse {
+  "True when the request succeeded."
+  ok: Boolean!
+}
+
+"Union response for token/session revocation."
+union RevokeTokenResponse = RevokeTokenOkResponse | RevokeTokenErrorResponse
+
+"The available SQL operators that are used to filter query results."
+enum SQLOperator {
+  "Whether a value is within a range of values (`BETWEEN`)"
+  BETWEEN
+
+  "Equal operator (`=`)"
+  EQ
+
+  "Greater than operator (`>`)"
+  GT
+
+  "Greater than or equal operator (`>=`)"
+  GTE
+
+  "Whether a value is within a set of values (`IN`)"
+  IN
+
+  "Whether a value is not null (`IS NOT NULL`)"
+  IS_NOT_NULL
+
+  "Whether a value is null (`IS NULL`)"
+  IS_NULL
+
+  "Simple pattern matching (`LIKE`)"
+  LIKE
+
+  "Less than operator (`<`)"
+  LT
+
+  "Less than or equal operator (`<=`)"
+  LTE
+
+  "Not equal operator (`!=`)"
+  NEQ
+
+  "Whether a value is not within a range of values (`NOT BETWEEN`)"
+  NOT_BETWEEN
+
+  "Whether a value is not within a set of values (`NOT IN`)"
+  NOT_IN
+
+  "Negation of simple pattern matching (`NOT LIKE`)"
+  NOT_LIKE
+}
+
+"Union of searchable entities."
+union SearchEntityResult = Contact | Client | Agent | Job | Invoice | Audition | Expense | Platform | Note
+
+"Entity type filter for full-text search."
+enum SearchEntityType {
+  AGENT
+  AUDITION
+  CLIENT
+  CONTACT
+  EXPENSE
+  INVOICE
+  JOB
+  NOTE
+  PLATFORM
+}
+
+"Single field match explanation for a search hit."
+type SearchMatch {
+  end: Int!
+  field: String!
+  matchedText: String!
+  snippet: String!
+  start: Int!
+  text: String!
+}
+
+"Pagination metadata for search."
+type SearchPaginatorInfo {
+  currentPage: Int!
+  hasMorePages: Boolean!
+  lastPage: Int!
+  perPage: Int!
+  total: Int!
+}
+
+"Search hit wrapper with the resolved entity and match metadata."
+type SearchResultItem {
+  entity: SearchEntityResult!
+  matches: [SearchMatch!]!
+}
+
+"Paginated search payload."
+type SearchResultPaginator {
+  data: [SearchResultItem!]!
+  paginatorInfo: SearchPaginatorInfo!
+}
+
+"User settings and preferences"
+type Settings {
+  "When the settings were created"
+  created_at: Timestamp!
+
+  "Currency code"
+  currency: String!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Language code"
+  language: String!
+
+  "Timezone"
+  timezone: String!
+
+  "When the settings were last updated"
+  updated_at: Timestamp!
+
+  "The user these settings belong to"
+  user: User!
+
+  "User ID this settings belongs to"
+  user_id: ULID!
+}
+
+"Error response for sign-up and code request."
+type SignUpAndRequestAuthenticationTokenErrorResponse {
+  "Human-readable error message."
+  message: String!
+}
+
+"Input for registering (if needed) and requesting an authentication code."
+input SignUpAndRequestAuthenticationTokenInput {
+  "Email address to receive the authentication code."
+  email: String!
+
+  "Display name for new users."
+  name: String!
+}
+
+"Success response for sign-up and code request."
+type SignUpAndRequestAuthenticationTokenOkResponse {
+  "True when the request succeeded."
+  ok: Boolean!
+}
+
+"Union response for sign-up and code request."
+union SignUpAndRequestAuthenticationTokenResponse = SignUpAndRequestAuthenticationTokenOkResponse | SignUpAndRequestAuthenticationTokenErrorResponse
+
+"Input for snoozing an activity"
+input SnoozeActivityInput {
+  id: ULID!
+  snoozed_until: Timestamp!
+}
+
+"Directions for ordering a list of records."
+enum SortOrder {
+  "Sort records in ascending order."
+  ASC
+
+  "Sort records in descending order."
+  DESC
+}
+
+"Entities that can be audition sources"
+union SourceableEntity = Platform | Contact
+
+"Generic time series data point for any time-based chart"
+type TimeSeriesDataPoint {
+  "UTC timestamp in milliseconds representing the date/time for this data point"
+  timestamp: Timestamp!
+
+  "Value at this point in time (typically in cents for monetary values)"
+  value: Int!
+}
+
+"Unix timestamp (milliseconds since Unix epoch) in UTC. Always stored and transmitted as UTC."
+scalar Timestamp
+
+"Specify if you want to include or exclude trashed results from a query."
+enum Trashed {
+  "Only return trashed results."
+  ONLY
+
+  "Return both trashed and non-trashed results."
+  WITH
+
+  "Only return non-trashed results."
+  WITHOUT
+}
+
+"ULID scalar type for Universally Unique Lexicographically Sortable Identifiers"
+scalar ULID
+
+"Input for updating an agent contact"
+input UpdateAgentContactInput {
+  "City"
+  address_city: String
+
+  "Country"
+  address_country: String
+
+  "Postal code"
+  address_postal: String
+
+  "State/Region"
+  address_state: String
+
+  "Street address"
+  address_street: String
+
+  "Email"
+  email: String
+
+  "Last contacted timestamp"
+  last_contacted_at: Timestamp
+
+  "Contact name"
+  name: String
+
+  "Phone"
+  phone: String
+
+  "Phone extension"
+  phone_ext: String
+}
+
+"Input for updating an agent and/or primary contact"
+input UpdateAgentWithContactInput {
+  "Agency name"
+  agency_name: String
+
+  "Commission rate in basis points"
+  commission_rate: Int
+
+  "Contact data"
+  contact: UpdateAgentContactInput
+
+  "Contract end date"
+  contract_end: Timestamp
+
+  "Contract start date"
+  contract_start: Timestamp
+
+  "Whether this agent is exclusive"
+  is_exclusive: Boolean
+
+  "Territories covered by the agent"
+  territories: [String!]
+}
+
+"Input for updating an attachment"
+input UpdateAttachmentInput {
+  category: AttachmentCategory
+  disk: String
+  filename: String
+  metadata: JSON
+  mime_type: String
+  original_filename: String
+  path: String
+  size: Int
+}
+
+"Input for updating an audition"
+input UpdateAuditionInput {
+  brand_name: String
+  budget_max: Int
+  budget_min: Int
+  category: ProjectCategory
+  character_name: String
+  project_deadline: Timestamp
+  project_title: String
+  quoted_rate: Int
+  rate_type: RateType
+  response_deadline: Timestamp
+  source_reference: String
+
+  "ID of the source entity matching sourceable_type."
+  sourceable_id: ULID
+
+  "Polymorphic type discriminator for the source entity (see SourceableEntity)."
+  sourceable_type: String
+  status: AuditionStatus
+  submitted_at: Timestamp
+  word_count: Int
+}
+
+"Input for updating a business profile"
+input UpdateBusinessProfileInput {
+  address_city: String
+  address_country: String
+  address_postal: String
+  address_state: String
+  address_street: String
+  business_name: String
+  email: String
+  logo_path: String
+  payment_instructions: String
+  phone: String
+}
+
+"Input for updating a client"
+input UpdateClientInput {
+  industry: String
+  payment_terms: String
+  type: ClientType
+}
+
+"Input for updating a contact"
+input UpdateContactInput {
+  address_city: String
+  address_country: String
+  address_postal: String
+  address_state: String
+  address_street: String
+
+  "ID of the related entity matching contactable_type."
+  contactable_id: ULID
+
+  "Polymorphic type discriminator for the related entity (see ContactableEntity)."
+  contactable_type: String
+  email: String
+  last_contacted_at: Timestamp
+  name: String
+  phone: String
+  phone_ext: String
+}
+
+"Input for updating an expense definition"
+input UpdateExpenseDefinitionInput {
+  amount: MoneyInput
+  category: ExpenseCategory
+  ends_at: Timestamp
+  is_active: Boolean
+  name: String
+  recurrence: ExpenseRecurrence
+  recurrence_day: Int
+  starts_at: Timestamp
+}
+
+"Input for updating an expense"
+input UpdateExpenseInput {
+  amount: MoneyInput
+  category: ExpenseCategory
+  date: Timestamp
+  description: String
+  expense_definition_id: ULID
+}
+
+"Input for updating an invoice"
+input UpdateInvoiceInput {
+  client_id: ULID
+  due_at: Timestamp
+  invoice_number: String
+  issued_at: Timestamp
+  job_id: ULID
+  paid_at: Timestamp
+  status: InvoiceStatus
+  subtotal: MoneyInput
+  tax_amount: MoneyInput
+  tax_rate: Float
+  total: MoneyInput
+}
+
+"Input for updating an invoice item"
+input UpdateInvoiceItemInput {
+  amount: Int
+  description: String
+  quantity: Float
+  unit_price: Int
+}
+
+"Input for updating a job"
+input UpdateJobInput {
+  actual_hours: Float
+  agent: CreateJobAgentRelationInput
+  audition: CreateJobAuditionRelationInput
+  brand_name: String
+  category: ProjectCategory
+  character_name: String
+  client: CreateJobClientRelationInput
+  contracted_rate: MoneyInput
+  delivered_at: Timestamp
+  delivery_deadline: Timestamp
+  estimated_hours: Float
+  project_title: String
+  rate_type: RateType
+  session_date: Timestamp
+  status: JobStatus
+  word_count: Int
+}
+
+"Input for updating a note"
+input UpdateNoteInput {
+  content: String!
+}
+
+"Input for updating a platform"
+input UpdatePlatformInput {
+  external_id: String
+  name: String
+  url: String
+  username: String
+}
+
+"Input for updating settings"
+input UpdateSettingsInput {
+  currency: String
+  language: String
+  timezone: String
+}
+
+"Input for updating usage rights"
+input UpdateUsageRightInput {
+  ai_rights_granted: Boolean
+  duration_months: Int
+  duration_type: DurationType
+  exclusivity: Boolean
+  exclusivity_category: String
+  expiration_date: Timestamp
+  geographic_scope: GeographicScope
+  media_types: [UsageMediaType!]
+  renewal_reminder_sent: Boolean
+  start_date: Timestamp
+  type: UsageType
+}
+
+"Input for updating a user"
+input UpdateUserInput {
+  "User's display name"
+  name: String
+}
+
+"Entities that can be assigned usage rights"
+union UsableEntity = Audition | Job
+
+"Media type enum"
+enum UsageMediaType {
+  ALL_MEDIA
+  CINEMA
+  DIGITAL
+  INTERNAL
+  OUTDOOR
+  PODCAST
+  PRINT
+  RADIO
+  SOCIAL_MEDIA
+  STREAMING
+  TV
+  VIDEO_GAME
+}
+
+"Usage rights details"
+type UsageRight {
+  "AI rights granted"
+  ai_rights_granted: Boolean!
+
+  "When the usage rights were created"
+  created_at: Timestamp!
+
+  "Duration in months"
+  duration_months: Int
+
+  "Duration type"
+  duration_type: DurationType!
+
+  "Exclusivity flag"
+  exclusivity: Boolean!
+
+  "Exclusivity category"
+  exclusivity_category: String
+
+  "Expiration date"
+  expiration_date: Timestamp
+
+  "Geographic scope"
+  geographic_scope: GeographicScope!
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "Media types"
+  media_types: [UsageMediaType!]!
+
+  "Notes for this usage right (paginated)"
+  notes(
+    "Limits number of fetched items."
+    first: Int! = 20
+
+    "The offset from which items are returned."
+    page: Int
+  ): NotePaginator!
+
+  "Renewal reminder sent"
+  renewal_reminder_sent: Boolean!
+
+  "Start date"
+  start_date: Timestamp
+
+  "Usage type"
+  type: UsageType!
+
+  "When the usage rights were last updated"
+  updated_at: Timestamp!
+
+  "The usable entity (audition or job)"
+  usable: UsableEntity
+
+  "ID of the usable entity matching usable_type."
+  usable_id: ULID!
+
+  "Polymorphic type discriminator for the usable entity (see UsableEntity)."
+  usable_type: String!
+}
+
+"A paginated list of UsageRight items."
+type UsageRightPaginator {
+  "A list of UsageRight items."
+  data: [UsageRight!]!
+
+  "Pagination information about the list of items."
+  paginatorInfo: PaginatorInfo!
+}
+
+"Usage rights type"
+enum UsageType {
+  BROADCAST
+  NON_BROADCAST
+}
+
+"Account of a person who uses this application."
+type User {
+  "Business profile"
+  businessProfile: BusinessProfile
+
+  "When the account was created"
+  created_at: Timestamp!
+
+  "Unique email address"
+  email: String!
+
+  "When the email was verified"
+  email_verified_at: Timestamp
+
+  "Unique primary key (ULID)"
+  id: ULID!
+
+  "User's display name"
+  name: String!
+
+  "User settings"
+  settings: Settings
+
+  "When the account was last updated"
+  updated_at: Timestamp!
+}
+
+"Dynamic WHERE conditions for queries."
+input WhereConditions {
+  "A set of conditions that requires all conditions to match."
+  AND: [WhereConditions!]
+
+  "Check whether a relation exists. Extra conditions or a minimum amount can be applied."
+  HAS: WhereConditionsRelation
+
+  "A set of conditions that requires at least one condition to match."
+  OR: [WhereConditions!]
+
+  "The column that is used for the condition."
+  column: String
+
+  "The operator that is used for the condition."
+  operator: SQLOperator = EQ
+
+  "The value that is used for the condition."
+  value: Mixed
+}
+
+"Dynamic WHERE conditions for HAS conditions."
+input WhereConditionsHasCondition {
+  "A set of conditions that requires all conditions to match."
+  AND: [WhereConditionsHasCondition!]
+
+  "Check whether a relation exists. Extra conditions or a minimum amount can be applied."
+  HAS: WhereConditionsRelation
+
+  "A set of conditions that requires at least one condition to match."
+  OR: [WhereConditionsHasCondition!]
+
+  "The column that is used for the condition."
+  column: String
+
+  "The operator that is used for the condition."
+  operator: SQLOperator = EQ
+
+  "The value that is used for the condition."
+  value: Mixed
+}
+
+"Dynamic HAS conditions for WHERE condition queries."
+input WhereConditionsRelation {
+  "The amount to test."
+  amount: Int = 1
+
+  "Additional condition logic."
+  condition: WhereConditionsHasCondition
+
+  "The comparison operator to test against the amount."
+  operator: SQLOperator = GTE
+
+  "The relation that is checked."
+  relation: String!
+}
+

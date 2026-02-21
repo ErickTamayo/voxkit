@@ -1,0 +1,144 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Attachment category enum"
+enum AttachmentCategory {
+    SCRIPT @enum(value: "script")
+    RECORDING @enum(value: "recording")
+    CONTRACT @enum(value: "contract")
+    DELIVERABLE @enum(value: "deliverable")
+    RECEIPT @enum(value: "receipt")
+    INVOICE_PDF @enum(value: "invoice_pdf")
+    HEADSHOT @enum(value: "headshot")
+    AGREEMENT @enum(value: "agreement")
+    OTHER @enum(value: "other")
+}
+
+"File attachment"
+type Attachment {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    """
+    Polymorphic type discriminator for the attached entity (see AttachableEntity).
+    """
+    attachable_type: String!
+
+    """
+    ID of the attached entity matching attachable_type.
+    """
+    attachable_id: ULID!
+
+    "Stored filename"
+    filename: String!
+
+    "Original filename"
+    original_filename: String!
+
+    "MIME type"
+    mime_type: String!
+
+    "File size in bytes"
+    size: Int!
+
+    "Storage disk"
+    disk: String!
+
+    "Storage path"
+    path: String!
+
+    "Category/type of attachment"
+    category: AttachmentCategory!
+
+    "Metadata payload"
+    metadata: JSON
+
+    "When the attachment was created"
+    created_at: Timestamp!
+
+    "When the attachment was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this attachment"
+    user: User! @belongsTo
+
+    "The attached entity"
+    attachable: AttachableEntity @morphTo
+}
+
+"Input for creating an attachment"
+input CreateAttachmentInput {
+    """
+    Polymorphic type discriminator for the attached entity (see AttachableEntity).
+    """
+    attachable_type: String!
+    """
+    ID of the attached entity matching attachable_type.
+    """
+    attachable_id: ULID!
+    filename: String!
+    original_filename: String!
+    mime_type: String!
+    size: Int!
+    disk: String!
+    path: String!
+    category: AttachmentCategory!
+    metadata: JSON
+}
+
+"Input for updating an attachment"
+input UpdateAttachmentInput {
+    filename: String
+    original_filename: String
+    mime_type: String
+    size: Int
+    disk: String
+    path: String
+    category: AttachmentCategory
+    metadata: JSON
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single attachment by ID"
+    attachment(id: ULID! @eq): Attachment @find @guard
+
+    "List all attachments for authenticated user"
+    attachments(first: Int = 20, page: Int): [Attachment!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new attachment"
+    createAttachment(input: CreateAttachmentInput! @spread): Attachment!
+        @create
+        @inject(context: "user.id", name: "user_id")
+        @guard
+
+    "Update an attachment"
+    updateAttachment(id: ULID!, input: UpdateAttachmentInput! @spread): Attachment
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+
+    "Delete an attachment"
+    deleteAttachment(id: ULID! @whereKey): Attachment
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+

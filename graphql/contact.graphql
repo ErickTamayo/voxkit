@@ -1,0 +1,155 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Contact record"
+type Contact {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    """
+    Polymorphic type discriminator for the related entity (see ContactableEntity).
+    """
+    contactable_type: String!
+
+    """
+    ID of the related entity matching contactable_type.
+    """
+    contactable_id: ULID!
+
+    "Contact name"
+    name: String!
+
+    "Email"
+    email: String
+
+    "Phone"
+    phone: String
+
+    "Phone extension"
+    phone_ext: String
+
+    "Street address"
+    address_street: String
+
+    "City"
+    address_city: String
+
+    "State/Region"
+    address_state: String
+
+    "Country"
+    address_country: String
+
+    "Postal code"
+    address_postal: String
+
+    "Last contacted timestamp"
+    last_contacted_at: Timestamp
+
+    "When the contact was created"
+    created_at: Timestamp!
+
+    "When the contact was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this contact"
+    user: User! @belongsTo
+
+    "The related contactable entity"
+    contactable: ContactableEntity @morphTo
+
+    "Attachments for this contact"
+    attachments: [Attachment!]! @morphMany
+
+    "Notes for this entity (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for creating a contact"
+input CreateContactInput {
+    """
+    Polymorphic type discriminator for the related entity (see ContactableEntity).
+    """
+    contactable_type: String!
+    """
+    ID of the related entity matching contactable_type.
+    """
+    contactable_id: ULID!
+    name: String!
+    email: String
+    phone: String
+    phone_ext: String
+    address_street: String
+    address_city: String
+    address_state: String
+    address_country: String
+    address_postal: String
+    last_contacted_at: Timestamp
+}
+
+"Input for updating a contact"
+input UpdateContactInput {
+    """
+    Polymorphic type discriminator for the related entity (see ContactableEntity).
+    """
+    contactable_type: String
+    """
+    ID of the related entity matching contactable_type.
+    """
+    contactable_id: ULID
+    name: String
+    email: String
+    phone: String
+    phone_ext: String
+    address_street: String
+    address_city: String
+    address_state: String
+    address_country: String
+    address_postal: String
+    last_contacted_at: Timestamp
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single contact by ID"
+    contact(id: ULID! @eq): Contact @find @guard
+
+    "List all contacts for authenticated user"
+    contacts(first: Int = 20, page: Int): [Contact!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new contact"
+    createContact(input: CreateContactInput! @spread): Contact!
+        @create
+        @inject(context: "user.id", name: "user_id")
+        @guard
+
+    "Update a contact"
+    updateContact(id: ULID!, input: UpdateContactInput! @spread): Contact
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+
+    "Delete a contact"
+    deleteContact(id: ULID! @whereKey): Contact
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+

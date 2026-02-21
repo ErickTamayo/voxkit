@@ -1,2 +1,4 @@
 *
 !.gitignore
+!exchange-rates/
+!exchange-rates/**

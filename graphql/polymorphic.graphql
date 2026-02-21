@@ -1,0 +1,23 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Entities that can be assigned to a contact"
+union ContactableEntity = Agent | Client
+
+"Entities that can be audition sources"
+union SourceableEntity = Platform | Contact
+
+"Entities that can be assigned usage rights"
+union UsableEntity = Audition | Job
+
+"Entities that can have attachments"
+union AttachableEntity = Audition | Job | Expense | Invoice | Contact
+
+"Entities that can be targeted by activities"
+union ActivityTargetable = Audition | Job | Invoice | UsageRight
+
+"Entities that can have notes"
+union NotableEntity = Audition | Job | Contact | Invoice | Expense | ExpenseDefinition | UsageRight | Activity | Platform
+
+

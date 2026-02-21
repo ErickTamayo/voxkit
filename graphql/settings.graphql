@@ -1,0 +1,62 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"User settings and preferences"
+type Settings {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID this settings belongs to"
+    user_id: ULID!
+
+    "Timezone"
+    timezone: String!
+
+    "Currency code"
+    currency: String!
+
+    "Language code"
+    language: String!
+
+    "When the settings were created"
+    created_at: Timestamp!
+
+    "When the settings were last updated"
+    updated_at: Timestamp!
+
+    "The user these settings belong to"
+    user: User! @belongsTo
+}
+
+"Input for updating settings"
+input UpdateSettingsInput {
+    timezone: String
+    currency: String
+    language: String
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get settings for the authenticated user"
+    mySettings: Settings @guard
+        @field(resolver: "App\\GraphQL\\Queries\\MySettingsQuery")
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Update the authenticated user's settings"
+    updateMySettings(input: UpdateSettingsInput! @spread): Settings!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\UpdateMySettingsMutation")
+}
+
+

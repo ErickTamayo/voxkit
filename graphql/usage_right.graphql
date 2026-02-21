@@ -1,0 +1,179 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Usage rights type"
+enum UsageType {
+    BROADCAST @enum(value: "broadcast")
+    NON_BROADCAST @enum(value: "non_broadcast")
+}
+
+"Media type enum"
+enum UsageMediaType {
+    TV @enum(value: "tv")
+    RADIO @enum(value: "radio")
+    DIGITAL @enum(value: "digital")
+    SOCIAL_MEDIA @enum(value: "social_media")
+    STREAMING @enum(value: "streaming")
+    CINEMA @enum(value: "cinema")
+    PRINT @enum(value: "print")
+    OUTDOOR @enum(value: "outdoor")
+    INTERNAL @enum(value: "internal")
+    PODCAST @enum(value: "podcast")
+    VIDEO_GAME @enum(value: "video_game")
+    ALL_MEDIA @enum(value: "all_media")
+}
+
+"Geographic scope enum"
+enum GeographicScope {
+    LOCAL @enum(value: "local")
+    REGIONAL @enum(value: "regional")
+    NATIONAL @enum(value: "national")
+    MULTI_NATIONAL @enum(value: "multi_national")
+    WORLDWIDE @enum(value: "worldwide")
+}
+
+"Duration type enum"
+enum DurationType {
+    FIXED @enum(value: "fixed")
+    PERPETUAL @enum(value: "perpetual")
+}
+
+"Usage rights details"
+type UsageRight {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    """
+    Polymorphic type discriminator for the usable entity (see UsableEntity).
+    """
+    usable_type: String!
+
+    """
+    ID of the usable entity matching usable_type.
+    """
+    usable_id: ULID!
+
+    "Usage type"
+    type: UsageType!
+
+    "Media types"
+    media_types: [UsageMediaType!]!
+
+    "Geographic scope"
+    geographic_scope: GeographicScope!
+
+    "Duration type"
+    duration_type: DurationType!
+
+    "Duration in months"
+    duration_months: Int
+
+    "Start date"
+    start_date: Timestamp
+
+    "Expiration date"
+    expiration_date: Timestamp
+
+    "Exclusivity flag"
+    exclusivity: Boolean!
+
+    "Exclusivity category"
+    exclusivity_category: String
+
+    "AI rights granted"
+    ai_rights_granted: Boolean!
+
+    "Renewal reminder sent"
+    renewal_reminder_sent: Boolean!
+
+    "When the usage rights were created"
+    created_at: Timestamp!
+
+    "When the usage rights were last updated"
+    updated_at: Timestamp!
+
+    "The usable entity (audition or job)"
+    usable: UsableEntity @morphTo
+
+    "Notes for this usage right (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for creating usage rights"
+input CreateUsageRightInput {
+    """
+    Polymorphic type discriminator for the usable entity (see UsableEntity).
+    """
+    usable_type: String!
+    """
+    ID of the usable entity matching usable_type.
+    """
+    usable_id: ULID!
+    type: UsageType!
+    media_types: [UsageMediaType!]!
+    geographic_scope: GeographicScope!
+    duration_type: DurationType!
+    duration_months: Int
+    start_date: Timestamp
+    expiration_date: Timestamp
+    exclusivity: Boolean
+    exclusivity_category: String
+    ai_rights_granted: Boolean
+    renewal_reminder_sent: Boolean
+}
+
+"Input for updating usage rights"
+input UpdateUsageRightInput {
+    type: UsageType
+    media_types: [UsageMediaType!]
+    geographic_scope: GeographicScope
+    duration_type: DurationType
+    duration_months: Int
+    start_date: Timestamp
+    expiration_date: Timestamp
+    exclusivity: Boolean
+    exclusivity_category: String
+    ai_rights_granted: Boolean
+    renewal_reminder_sent: Boolean
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single usage right by ID"
+    usageRight(id: ULID! @eq): UsageRight @find @guard
+
+    "List all usage rights for authenticated user"
+    usageRights(first: Int = 20, page: Int): [UsageRight!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new usage right"
+    createUsageRight(input: CreateUsageRightInput! @spread): UsageRight!
+        @create
+        @guard
+
+    "Update a usage right"
+    updateUsageRight(id: ULID!, input: UpdateUsageRightInput! @spread): UsageRight
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+
+    "Delete a usage right"
+    deleteUsageRight(id: ULID! @whereKey): UsageRight
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+

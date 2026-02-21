@@ -1,0 +1,162 @@
+#import graphql/*.graphql
+
+"ULID scalar type for Universally Unique Lexicographically Sortable Identifiers"
+scalar ULID @scalar(class: "App\\GraphQL\\Scalars\\ULID")
+
+"Unix timestamp (milliseconds since Unix epoch) in UTC. Always stored and transmitted as UTC."
+scalar Timestamp @scalar(class: "App\\GraphQL\\Scalars\\Timestamp")
+
+"Arbitrary JSON value."
+scalar JSON @scalar(class: "App\\GraphQL\\Scalars\\Json")
+
+"Indicates what fields are available at the top level of a query operation."
+type Query
+
+"Root mutation type"
+type Mutation
+
+"Project category enum"
+enum ProjectCategory {
+    COMMERCIAL @enum(value: "commercial")
+    ANIMATION @enum(value: "animation")
+    VIDEO_GAME @enum(value: "video_game")
+    AUDIOBOOK @enum(value: "audiobook")
+    ELEARNING @enum(value: "elearning")
+    CORPORATE @enum(value: "corporate")
+    DOCUMENTARY @enum(value: "documentary")
+    NARRATION @enum(value: "narration")
+    PROMO @enum(value: "promo")
+    TRAILER @enum(value: "trailer")
+    RADIO_IMAGING @enum(value: "radio_imaging")
+    IVR @enum(value: "ivr")
+    EXPLAINER @enum(value: "explainer")
+    PODCAST @enum(value: "podcast")
+    DUBBING @enum(value: "dubbing")
+    ANNOUNCEMENT @enum(value: "announcement")
+    MEDITATION @enum(value: "meditation")
+    TV_SERIES @enum(value: "tv_series")
+    FILM @enum(value: "film")
+    COACHING @enum(value: "coaching")
+    OTHER @enum(value: "other")
+    UNKNOWN @enum(value: "unknown")
+}
+
+"Precision level of currency conversion"
+enum Precision {
+    EXACT @enum(value: "EXACT")
+    ESTIMATED @enum(value: "ESTIMATED")
+}
+
+"Represents a monetary value in a specific currency"
+type Money {
+    "The currency code (e.g. USD, CAD)"
+    currency: String!
+
+    "The amount in cents"
+    amount_cents: Int!
+
+    "Precision of the conversion: EXACT (rate found for date) or ESTIMATED (fallback rate used)"
+    precision: Precision!
+}
+
+"A monetary amount with both original and converted values"
+type MonetaryAmount {
+    "Original value as stored in the database"
+    original: Money!
+
+    "Value converted to the user's base currency"
+    converted: Money!
+}
+
+"Generic time series data point for any time-based chart"
+type TimeSeriesDataPoint {
+    """
+    UTC timestamp in milliseconds representing the date/time for this data point
+    """
+    timestamp: Timestamp!
+    """
+    Value at this point in time (typically in cents for monetary values)
+    """
+    value: Int!
+}
+
+"Generic chart point with timestamp and value - alias for TimeSeriesDataPoint"
+type ChartPoint {
+    """
+    UTC timestamp in milliseconds representing the date/time for this data point
+    """
+    timestamp: Timestamp!
+    """
+    Value at this point in time (typically in cents for monetary values)
+    """
+    value: Int!
+}
+
+"A date range with start and end timestamps"
+type DateRange {
+    "Start date/time in UTC milliseconds"
+    start: Timestamp!
+    "End date/time in UTC milliseconds"
+    end: Timestamp!
+}
+
+"""
+Compact predefined ranges for charting and metrics, etc.
+"""
+enum CompactRange {
+    OneWeek @enum(value: "1W")
+    FourWeeks @enum(value: "4W")
+    MonthToDate @enum(value: "MTD")
+    QuarterToDate @enum(value: "QTD")
+    YearToDate @enum(value: "YTD")
+    OneYear @enum(value: "1Y")
+    AllTime @enum(value: "ALL")
+}
+
+"""
+Describes the actual date range used for chart data
+"""
+type DateRangeWindow {
+    start: Timestamp!
+    end: Timestamp!
+    daysInRange: Int!
+    wasExpanded: Boolean!
+    expansionReason: String
+}
+
+"""
+Wrapper type for CompactRange enum values.
+Used in union types where both enum and complex types need to be supported.
+"""
+type CompactRangeValue {
+    value: CompactRange!
+}
+
+"Union type for chart range - can be either a compact range enum or explicit date range"
+union ChartRange = CompactRangeValue | DateRange
+
+"Common interface for all chart responses with time-series data"
+interface ChartResponse {
+    """
+    The range of data requested - either a compact range (1W, MTD, etc.) or explicit dates
+    """
+    range: ChartRange!
+    """
+    The actual time window used for the chart.
+    Early MTD/QTD/YTD requests are automatically expanded for better visualization.
+    """
+    effectiveWindow: DateRangeWindow!
+    """
+    Chart data points with timestamp and value
+    """
+    chart: [ChartPoint!]!
+}
+
+"Input for monetary values"
+input MoneyInput {
+    "Amount in cents"
+    amount_cents: Int!
+
+    "Currency code (ISO 4217)"
+    currency: String!
+}

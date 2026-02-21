@@ -1,0 +1,100 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Activity trigger enum"
+enum ActivityTrigger {
+    AUDITION_RESPONSE_DUE @enum(value: "audition_response_due")
+    JOB_SESSION_UPCOMING @enum(value: "job_session_upcoming")
+    JOB_DELIVERY_DUE @enum(value: "job_delivery_due")
+    JOB_REVISION_REQUESTED @enum(value: "job_revision_requested")
+    INVOICE_DUE_SOON @enum(value: "invoice_due_soon")
+    INVOICE_OVERDUE @enum(value: "invoice_overdue")
+    USAGE_RIGHTS_EXPIRING @enum(value: "usage_rights_expiring")
+}
+
+"Activity state enum"
+enum ActivityAction {
+    SNOOZED @enum(value: "snoozed")
+    ARCHIVED @enum(value: "archived")
+}
+
+"User action taken on an activity item"
+type Activity {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    "Trigger that surfaced the item"
+    trigger: ActivityTrigger!
+
+    "Action taken by the user (null if no action taken yet)"
+    action: ActivityAction
+
+    "Snooze expiration timestamp"
+    snoozed_until: Timestamp
+
+    "When the action was created"
+    created_at: Timestamp!
+
+    "When the action was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this action"
+    user: User! @belongsTo
+
+    "The targetable entity for this action"
+    targetable: ActivityTargetable @field(resolver: "App\\GraphQL\\Resolvers\\ActivityTargetableResolver@resolve")
+
+    "Notes for this activity (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for snoozing an activity"
+input SnoozeActivityInput {
+    id: ULID! @rules(apply: ["required", "exists:activities,id"])
+    snoozed_until: Timestamp! @rules(apply: ["required"])
+}
+
+"Input for archiving an activity"
+input ArchiveActivityInput {
+    id: ULID! @rules(apply: ["required", "exists:activities,id"])
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "List activities for authenticated user"
+    activities(
+        where: _ @whereConditions(columns: ["action", "snoozed_until"])
+        first: Int = 20
+        page: Int
+    ): [Activity!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Snooze an activity for the authenticated user"
+    snoozeActivity(input: SnoozeActivityInput! @spread): Activity!
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @field(resolver: "App\\GraphQL\\Mutations\\ActivityMutations@snooze")
+
+    "Archive an activity for the authenticated user"
+    archiveActivity(input: ArchiveActivityInput! @spread): Activity!
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @field(resolver: "App\\GraphQL\\Mutations\\ActivityMutations@archive")
+}
+

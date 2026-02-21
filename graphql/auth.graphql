@@ -1,0 +1,198 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"""
+Authentication mode for code-based login.
+"""
+enum AuthMode {
+    """
+    Return a bearer token in the response.
+    """
+    TOKEN
+    """
+    Establish a server session for the client.
+    """
+    SESSION
+}
+
+"""
+Input for registering (if needed) and requesting an authentication code.
+"""
+input SignUpAndRequestAuthenticationTokenInput {
+    """
+    Display name for new users.
+    """
+    name: String! @rules(apply: ["required", "string", "max:255"])
+    """
+    Email address to receive the authentication code.
+    """
+    email: String! @rules(apply: ["required", "email", "max:255", "indisposable"])
+}
+
+"""
+Input for requesting an authentication code for an existing user.
+"""
+input RequestAuthenticationCodeInput {
+    """
+    Email address to receive the authentication code.
+    """
+    email: String! @rules(apply: ["required", "email", "max:255"])
+}
+
+"""
+Input for verifying an authentication code.
+"""
+input AuthenticateWithCodeInput {
+    """
+    Email address the code was sent to.
+    """
+    email: String! @rules(apply: ["required", "email", "max:255"])
+    """
+    6-digit numeric authentication code.
+    """
+    code: String! @rules(apply: ["required", "regex:/^\\d{6}$/"])
+    """
+    Auth mode that determines token vs session behavior.
+    """
+    mode: AuthMode!
+    """
+    Optional device label for token/session creation.
+    """
+    device_name: String @rules(apply: ["sometimes", "string", "max:255"])
+}
+
+"""
+Success response for sign-up and code request.
+"""
+type SignUpAndRequestAuthenticationTokenOkResponse {
+    """
+    True when the request succeeded.
+    """
+    ok: Boolean!
+}
+
+"""
+Error response for sign-up and code request.
+"""
+type SignUpAndRequestAuthenticationTokenErrorResponse {
+    """
+    Human-readable error message.
+    """
+    message: String!
+}
+
+"""
+Union response for sign-up and code request.
+"""
+union SignUpAndRequestAuthenticationTokenResponse = SignUpAndRequestAuthenticationTokenOkResponse | SignUpAndRequestAuthenticationTokenErrorResponse
+
+"""
+Success response for code request.
+"""
+type RequestAuthenticationCodeOkResponse {
+    """
+    True when the request succeeded.
+    """
+    ok: Boolean!
+}
+
+"""
+Error response for code request.
+"""
+type RequestAuthenticationCodeErrorResponse {
+    """
+    Human-readable error message.
+    """
+    message: String!
+}
+
+"""
+Union response for code request.
+"""
+union RequestAuthenticationCodeResponse = RequestAuthenticationCodeOkResponse | RequestAuthenticationCodeErrorResponse
+
+"""
+Success response for code verification in session mode.
+"""
+type AuthenticateWithCodeOkResponse {
+    """
+    True when the request succeeded.
+    """
+    ok: Boolean!
+}
+
+"""
+Success response for code verification in token mode.
+"""
+type AuthenticateWithCodeTokenResponse {
+    """
+    Bearer token for API authentication.
+    """
+    token: String!
+}
+
+"""
+Error response for code verification.
+"""
+type AuthenticateWithCodeErrorResponse {
+    """
+    Human-readable error message.
+    """
+    message: String!
+}
+
+"""
+Union response for code verification.
+"""
+union AuthenticateWithCodeResponse = AuthenticateWithCodeOkResponse | AuthenticateWithCodeTokenResponse | AuthenticateWithCodeErrorResponse
+
+"""
+Success response for token/session revocation.
+"""
+type RevokeTokenOkResponse {
+    """
+    True when the request succeeded.
+    """
+    ok: Boolean!
+}
+
+"""
+Error response for token/session revocation.
+"""
+type RevokeTokenErrorResponse {
+    """
+    Human-readable error message.
+    """
+    message: String!
+}
+
+"""
+Union response for token/session revocation.
+"""
+union RevokeTokenResponse = RevokeTokenOkResponse | RevokeTokenErrorResponse
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Register a new user and send an auth code"
+    signUpAndRequestAuthenticationToken(input: SignUpAndRequestAuthenticationTokenInput! @spread): SignUpAndRequestAuthenticationTokenResponse!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@signUpAndRequestAuthenticationToken")
+
+    "Request an auth code for an existing user"
+    requestAuthenticationCode(input: RequestAuthenticationCodeInput! @spread): RequestAuthenticationCodeResponse!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@requestAuthenticationCode")
+
+    "Verify an auth code and authenticate the user"
+    authenticateWithCode(input: AuthenticateWithCodeInput! @spread): AuthenticateWithCodeResponse!
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@authenticateWithCode")
+
+    "Revoke the current token/session"
+    revokeToken: RevokeTokenResponse!
+        @guard
+        @field(resolver: "App\\GraphQL\\Mutations\\AuthCodeMutations@revokeToken")
+}
+

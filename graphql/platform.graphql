@@ -1,0 +1,97 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Pay-to-play platform"
+type Platform {
+    "Unique primary key (ULID)"
+    id: ULID!
+
+    "User ID"
+    user_id: ULID!
+
+    "Platform name"
+    name: String!
+
+    "Platform URL"
+    url: String
+
+    "Username on platform"
+    username: String
+
+    "External platform ID"
+    external_id: String
+
+    "When the platform was created"
+    created_at: Timestamp!
+
+    "When the platform was last updated"
+    updated_at: Timestamp!
+
+    "The user who owns this platform"
+    user: User! @belongsTo
+
+    "Auditions sourced from this platform"
+    auditions: [Audition!]! @morphMany
+
+    "Notes for this platform (paginated)"
+    notes(first: Int = 20, page: Int): [Note!]! @morphMany(type: PAGINATOR, defaultCount: 20)
+}
+
+"Input for creating a platform"
+input CreatePlatformInput {
+    name: String!
+    url: String
+    username: String
+    external_id: String
+}
+
+"Input for updating a platform"
+input UpdatePlatformInput {
+    name: String
+    url: String
+    username: String
+    external_id: String
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Get a single platform by ID"
+    platform(id: ULID! @eq): Platform @find @guard
+
+    "List all platforms for authenticated user"
+    platforms(first: Int = 20, page: Int): [Platform!]!
+        @paginate(defaultCount: 20, scopes: ["forUser"])
+        @guard
+}
+
+
+# --------------------------------------------------
+# Mutations
+# --------------------------------------------------
+
+extend type Mutation {
+    "Create a new platform"
+    createPlatform(input: CreatePlatformInput! @spread): Platform!
+        @create
+        @inject(context: "user.id", name: "user_id")
+        @guard
+
+    "Update a platform"
+    updatePlatform(id: ULID!, input: UpdatePlatformInput! @spread): Platform
+        @guard
+        @canFind(ability: "update", find: "id", action: RETURN_VALUE, returnValue: null)
+        @update
+
+    "Delete a platform"
+    deletePlatform(id: ULID! @whereKey): Platform
+        @guard
+        @canFind(ability: "delete", find: "id", action: RETURN_VALUE, returnValue: null)
+        @delete
+}
+
+

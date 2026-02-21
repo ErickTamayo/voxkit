@@ -30,11 +30,10 @@ return [
          * make sure to return spec-compliant responses in case an error is thrown.
          */
         'middleware' => [
-            // Lighthouse auth docs: Sanctum stateful middleware for cookie/session auth.
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-
-            // Ensures the request is not vulnerable to cross-site request forgery.
-            // Nuwave\Lighthouse\Http\Middleware\EnsureXHR::class,
+            'api',  // Use Laravel's api middleware group
+            \Illuminate\Cookie\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
 
             // Always set the `Accept: application/json` header.
             Nuwave\Lighthouse\Http\Middleware\AcceptJson::class,
@@ -77,8 +76,7 @@ return [
     | Additional schema files may be imported from within that file.
     |
     */
-
-    'schema_path' => base_path('graphql/schema.graphql'),
+    'schema_path' => base_path('schema.graphql'),
 
     /*
     |--------------------------------------------------------------------------

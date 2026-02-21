@@ -1,0 +1,71 @@
+# --------------------------------------------------
+# Types
+# --------------------------------------------------
+
+"Entity type filter for full-text search."
+enum SearchEntityType {
+    CONTACT
+    CLIENT
+    AGENT
+    JOB
+    INVOICE
+    AUDITION
+    EXPENSE
+    PLATFORM
+    NOTE
+}
+
+"Union of searchable entities."
+union SearchEntityResult = Contact | Client | Agent | Job | Invoice | Audition | Expense | Platform | Note
+
+"Single field match explanation for a search hit."
+type SearchMatch {
+    field: String!
+    text: String!
+    matchedText: String!
+    start: Int!
+    end: Int!
+    snippet: String!
+}
+
+"Search hit wrapper with the resolved entity and match metadata."
+type SearchResultItem {
+    entity: SearchEntityResult!
+    matches: [SearchMatch!]!
+}
+
+"Pagination metadata for search."
+type SearchPaginatorInfo {
+    currentPage: Int!
+    perPage: Int!
+    total: Int!
+    lastPage: Int!
+    hasMorePages: Boolean!
+}
+
+"Paginated search payload."
+type SearchResultPaginator {
+    data: [SearchResultItem!]!
+    paginatorInfo: SearchPaginatorInfo!
+}
+
+
+# --------------------------------------------------
+# Queries
+# --------------------------------------------------
+
+extend type Query {
+    "Run a user-scoped full-text search across one or many entity types."
+    search(
+        "Search text to match."
+        query: String = ""
+        "Optional entity type filters."
+        types: [SearchEntityType!]
+        "Maximum number of results (1-50)."
+        first: Int = 20
+        "1-based page number."
+        page: Int = 1
+    ): SearchResultPaginator!
+        @guard
+        @field(resolver: "App\\GraphQL\\Queries\\SearchQuery")
+}
