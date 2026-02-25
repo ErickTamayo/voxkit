@@ -1,7 +1,22 @@
-import type { ComponentProps, FC, ReactNode } from "react";
+import {
+    useEffect,
+    type ComponentProps,
+    type FC,
+    type PointerEvent as ReactPointerEvent,
+    type ReactNode,
+} from "react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Check, X } from "lucide-react";
-import { AnimatePresence, motion, type HTMLMotionProps } from "motion/react";
+import {
+    AnimatePresence,
+    animate,
+    motion,
+    useDragControls,
+    useMotionValue,
+    useTransform,
+    type HTMLMotionProps,
+    type PanInfo,
+} from "motion/react";
 import { Button } from "@/components/ui/button";
 import {
     Dialog,
@@ -16,6 +31,11 @@ import {
 } from "@/components/ui/modal/hooks/useModalRootContext";
 import { useIsDesktopViewport } from "@/hooks/useIsDesktopViewport";
 import { cn } from "@/lib/utils";
+import {
+    getModalSwipeDragOffset,
+    getModalSwipeReleaseOutcome,
+} from "@/components/ui/modalSwipe";
+import { isModalDragStartAllowed } from "@/components/ui/modal/isModalDragStartAllowed";
 
 type RadixDialogRootProps = ComponentProps<typeof DialogPrimitive.Root>;
 
@@ -28,7 +48,7 @@ interface ModalRootProps {
 
 interface ModalOverlayProps extends HTMLMotionProps<"div"> {}
 interface ModalPositionerProps extends HTMLMotionProps<"div"> {}
-interface ModalContentProps extends ComponentProps<"div"> {}
+interface ModalContentProps extends HTMLMotionProps<"div"> {}
 interface ModalHandleProps extends ComponentProps<"div"> {}
 interface ModalHeaderProps extends ComponentProps<"div"> {}
 interface ModalHeaderLeftProps extends ComponentProps<"div"> {}
@@ -55,6 +75,14 @@ const ModalRoot: FC<ModalRootProps> = ({
     modal = true,
 }) => {
     const isDesktopViewport = useIsDesktopViewport();
+    const sheetDragControls = useDragControls();
+    const sheetDragY = useMotionValue<number>(0);
+
+    useEffect(() => {
+        if (open || isDesktopViewport) {
+            sheetDragY.set(0);
+        }
+    }, [isDesktopViewport, open, sheetDragY]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange} modal={modal}>
@@ -62,6 +90,9 @@ const ModalRoot: FC<ModalRootProps> = ({
                 value={{
                     open,
                     isDesktopViewport,
+                    onOpenChange,
+                    sheetDragControls,
+                    sheetDragY,
                 }}
             >
                 {children}
@@ -162,15 +193,99 @@ const ModalPositioner: FC<ModalPositionerProps> = ({
     );
 };
 
-const ModalContent: FC<ModalContentProps> = ({ className, ...props }) => {
+const ModalContent: FC<ModalContentProps> = ({
+    className,
+    onDrag,
+    onDragEnd,
+    drag,
+    dragControls,
+    dragElastic,
+    dragMomentum,
+    dragListener,
+    dragDirectionLock,
+    style,
+    ...props
+}) => {
+    const {
+        isDesktopViewport,
+        onOpenChange,
+        sheetDragControls,
+        sheetDragY,
+    } = useModalRootContext("Modal.Content");
+
+    const isSwipeEnabled = !isDesktopViewport;
+    const sheetUpwardDragCompensation = useTransform(sheetDragY, (value) =>
+        value < 0 ? Math.abs(value) : 0,
+    );
+    const sheetUpwardDragBottomOffset = useTransform(sheetDragY, (value) =>
+        value < 0 ? value : 0,
+    );
+
+    const handleDrag = (
+        event: MouseEvent | TouchEvent | PointerEvent,
+        info: PanInfo,
+    ): void => {
+        if (isSwipeEnabled) {
+            sheetDragY.set(getModalSwipeDragOffset({ deltaY: info.offset.y }));
+        }
+
+        onDrag?.(event, info);
+    };
+
+    const handleDragEnd = (
+        event: MouseEvent | TouchEvent | PointerEvent,
+        info: PanInfo,
+    ): void => {
+        if (isSwipeEnabled) {
+            const outcome = getModalSwipeReleaseOutcome({
+                deltaY: info.offset.y,
+                velocityY: info.velocity.y,
+            });
+
+            if (outcome === "dismiss") {
+                onOpenChange(false);
+            } else {
+                void animate(sheetDragY, 0, {
+                    type: "spring",
+                    stiffness: 420,
+                    damping: 34,
+                    mass: 0.8,
+                });
+            }
+        }
+
+        onDragEnd?.(event, info);
+    };
+
     return (
-        <div
+        <motion.div
             data-slot="modal-content"
             className={cn(
                 "bg-background pointer-events-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-4xl border-x border-t border-b-0 shadow-lg",
                 "md:max-h-[85dvh] md:w-[min(100%-2rem,34rem)] md:rounded-2xl md:border md:border-b",
                 className,
             )}
+            style={
+                isSwipeEnabled
+                    ? {
+                          ...style,
+                          y: sheetDragY,
+                          // When the sheet is tugged upward, extend the surface and offset its
+                          // layout box downward so the bottom edge stays visually attached while
+                          // the top edge can still move upward.
+                          paddingBottom: sheetUpwardDragCompensation,
+                          marginBottom: sheetUpwardDragBottomOffset,
+                      }
+                    : style
+            }
+            drag={drag ?? (isSwipeEnabled ? "y" : false)}
+            dragControls={dragControls ?? sheetDragControls}
+            dragListener={dragListener ?? false}
+            dragMomentum={dragMomentum ?? false}
+            dragElastic={dragElastic ?? 0}
+            dragDirectionLock={dragDirectionLock ?? true}
+            onDrag={handleDrag}
+            onDragEnd={handleDragEnd}
             {...props}
         />
     );
@@ -179,15 +294,31 @@ const ModalContent: FC<ModalContentProps> = ({ className, ...props }) => {
 const ModalHandle: FC<ModalHandleProps> = ({
     className,
     children,
+    onPointerDown,
     ...props
 }) => {
+    const { isDesktopViewport, sheetDragControls } = useModalRootContext(
+        "Modal.Handle",
+    );
+
+    const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
+        onPointerDown?.(event);
+
+        if (event.defaultPrevented || isDesktopViewport) {
+            return;
+        }
+
+        sheetDragControls.start(event.nativeEvent);
+    };
+
     return (
         <div
             data-slot="modal-handle-row"
             className={cn(
-                "relative flex items-center justify-center px-4 pt-3 pb-2 md:hidden",
+                "relative flex items-center justify-center px-4 pt-3 pb-2 touch-none md:hidden",
                 className,
             )}
+            onPointerDown={handlePointerDown}
             {...props}
         >
             {children ?? (
@@ -200,14 +331,37 @@ const ModalHandle: FC<ModalHandleProps> = ({
     );
 };
 
-const ModalHeader: FC<ModalHeaderProps> = ({ className, ...props }) => {
+const ModalHeader: FC<ModalHeaderProps> = ({
+    className,
+    onPointerDown,
+    ...props
+}) => {
+    const { isDesktopViewport, sheetDragControls } = useModalRootContext(
+        "Modal.Header",
+    );
+
+    const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
+        onPointerDown?.(event);
+
+        if (event.defaultPrevented || isDesktopViewport) {
+            return;
+        }
+
+        if (!isModalDragStartAllowed(event.target)) {
+            return;
+        }
+
+        sheetDragControls.start(event.nativeEvent);
+    };
+
     return (
         <div
             data-slot="modal-header"
             className={cn(
-                "grid grid-cols-[auto_1fr_auto] items-start gap-2 px-4 pt-4 pb-3 md:px-6 md:pt-4",
+                "grid grid-cols-[auto_1fr_auto] items-start gap-2 px-4 pt-4 pb-3 touch-none md:px-6 md:pt-4 md:touch-auto",
                 className,
             )}
+            onPointerDown={handlePointerDown}
             {...props}
         />
     );
