@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { Redirect, Route, Switch } from "wouter";
 import { AuthenticatedRoute } from "@/components/AuthenticatedRoute";
 import { RouteWithLayout } from "@/components/RouteWithLayout";
+import RootLayout from "@/layouts/RootLayout";
 import { apolloClient } from "@/lib/apolloClient";
 import { AuthenticationCardLayout } from "@/routes/authentication/layouts/AuthenticationCard.layout";
 
@@ -17,7 +18,7 @@ const AccountRoute = lazy(
     () => import("@/routes/authentication/Authenticated.route"),
 );
 
-const App: FC = () => {
+const AppContent: FC = () => {
     return (
         <ApolloProvider client={apolloClient}>
             <Suspense fallback={<p className="px-4 py-6 text-sm text-muted-foreground">Loading...</p>}>
@@ -44,6 +45,14 @@ const App: FC = () => {
                 </Switch>
             </Suspense>
         </ApolloProvider>
+    );
+};
+
+const App: FC = () => {
+    return (
+        <RootLayout>
+            <AppContent />
+        </RootLayout>
     );
 };
 

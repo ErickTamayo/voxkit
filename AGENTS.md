@@ -3,6 +3,8 @@
 *   **Plan First**: Never jump directly into code changes. Produce a concrete, step-by-step plan and review it with the user.
 *   **Clarify**: Ask whenever requirements are ambiguous.
 *   **Approval**: Wait for explicit acceptance of the plan before modifying code.
+*   **Make -> Review (Major Steps)**: For major steps (architecture, build config, shared foundations, multi-file refactors), implement one step at a time, run the smallest relevant check, stop, summarize what changed, and wait for review before continuing.
+*   **Review Gate Opt-Out**: Only skip a major-step review stop when the user explicitly says to continue without stopping for review.
 
 ## Global Guardrails
 
@@ -30,4 +32,5 @@ Use the relevant skill for each domain instead of embedding all guidance in this
 * `graphql-operation-colocation` — Colocated GraphQL operation and typed codegen workflow.
 * `i18n-patterns` — i18n key strategy, interpolation, and translation boundaries.
 * `ui-component-patterns` — Reusable component extraction and composition conventions.
+* `web-capacitor-foundation` — Shared web/Capacitor frontend foundation rules (target vs viewport, `RootLayout.capacitor`, `.capacitor.*` resolution, modal/sheet policy, safe-area boundaries, and make->review platform changes).
 * `testing-with-msw-vitest` — Vitest + MSW frontend testing patterns for API-backed UI behavior.
