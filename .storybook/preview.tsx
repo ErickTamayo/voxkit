@@ -47,12 +47,15 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
         }
 
         const root = document.documentElement;
+        const body = document.body;
         const previousValues = {
             top: root.style.getPropertyValue("--safe-area-top"),
             right: root.style.getPropertyValue("--safe-area-right"),
             bottom: root.style.getPropertyValue("--safe-area-bottom"),
             left: root.style.getPropertyValue("--safe-area-left"),
         };
+        const previousHtmlTarget = root.getAttribute("data-app-target");
+        const previousBodyTarget = body.getAttribute("data-app-target");
 
         // Storybook stories render modals via portals (`document.body`), so fake safe-area vars
         // applied only to the story wrapper won't reach the portaled modal content. Mirror the
@@ -61,6 +64,16 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
         root.style.setProperty("--safe-area-right", safeArea.right);
         root.style.setProperty("--safe-area-bottom", safeArea.bottom);
         root.style.setProperty("--safe-area-left", safeArea.left);
+
+        // Mirror the simulated platform target onto html/body too so portal content (e.g. modals)
+        // picks up target-scoped global CSS like the Capacitor text-selection defaults.
+        if (platformTarget === "capacitor") {
+            root.setAttribute("data-app-target", "capacitor");
+            body.setAttribute("data-app-target", "capacitor");
+        } else {
+            root.removeAttribute("data-app-target");
+            body.removeAttribute("data-app-target");
+        }
 
         return () => {
             if (previousValues.top) {
@@ -86,8 +99,26 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
             } else {
                 root.style.removeProperty("--safe-area-left");
             }
+
+            if (previousHtmlTarget === null) {
+                root.removeAttribute("data-app-target");
+            } else {
+                root.setAttribute("data-app-target", previousHtmlTarget);
+            }
+
+            if (previousBodyTarget === null) {
+                body.removeAttribute("data-app-target");
+            } else {
+                body.setAttribute("data-app-target", previousBodyTarget);
+            }
         };
-    }, [safeArea.bottom, safeArea.left, safeArea.right, safeArea.top]);
+    }, [
+        platformTarget,
+        safeArea.bottom,
+        safeArea.left,
+        safeArea.right,
+        safeArea.top,
+    ]);
 
     const rootStyle = {
         "--safe-area-top": safeArea.top,

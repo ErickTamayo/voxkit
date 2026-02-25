@@ -1,6 +1,7 @@
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { useEffect, type FC, type PropsWithChildren } from "react";
 import { registerCapacitorAndroidBackHandler, type BackButtonEvent, type CapacitorAppPlugin, type PluginListenerHandle } from "@/layouts/capacitorBackButton";
+import { useApplyDocumentAppTarget } from "@/layouts/hooks/useApplyDocumentAppTarget";
 
 interface RootLayoutProps extends PropsWithChildren {}
 
@@ -17,6 +18,7 @@ function useCapacitorAndroidBackHandler(): void {
 
 const RootLayout: FC<RootLayoutProps> = ({ children }) => {
     useCapacitorAndroidBackHandler();
+    useApplyDocumentAppTarget("capacitor");
 
     return (
         <div

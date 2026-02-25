@@ -166,7 +166,6 @@ export const MobileHeaderActionsSheet: Story = {
     args: {
         footer: undefined,
         showHandle: false,
-        headerCenterTop: <Modal.Handle className="relative -top-2 px-0 pt-0 pb-5" />,
         headerLeft: <Modal.CloseButton />,
         headerRight: (
             <Modal.Close asChild>
@@ -188,7 +187,6 @@ export const MobileHeaderActionsSheet: Story = {
 export const ResponsiveSingleComposition: Story = {
     args: {
         showHandle: false,
-        headerCenterTop: <Modal.Handle className="relative -top-2 px-0 pt-0 pb-5 md:hidden" />,
         headerLeft: <Modal.CloseButton className="md:hidden" />,
         headerRight: (
             <>

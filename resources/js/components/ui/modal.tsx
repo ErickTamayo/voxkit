@@ -112,7 +112,7 @@ const ModalOverlay: FC<ModalOverlayProps> = ({ className, ...props }) => {
                         <motion.div
                             data-slot="modal-overlay"
                             className={cn(
-                                "fixed inset-0 z-50 bg-black/50 backdrop-blur-sm",
+                                "fixed inset-0 z-50 bg-black/45 backdrop-blur-md backdrop-saturate-125",
                                 className,
                             )}
                             initial={{ opacity: 0 }}
@@ -206,12 +206,8 @@ const ModalContent: FC<ModalContentProps> = ({
     style,
     ...props
 }) => {
-    const {
-        isDesktopViewport,
-        onOpenChange,
-        sheetDragControls,
-        sheetDragY,
-    } = useModalRootContext("Modal.Content");
+    const { isDesktopViewport, onOpenChange, sheetDragControls, sheetDragY } =
+        useModalRootContext("Modal.Content");
 
     const isSwipeEnabled = !isDesktopViewport;
     const sheetUpwardDragCompensation = useTransform(sheetDragY, (value) =>
@@ -261,8 +257,8 @@ const ModalContent: FC<ModalContentProps> = ({
         <motion.div
             data-slot="modal-content"
             className={cn(
-                "bg-background pointer-events-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-4xl border-x border-t border-b-0 shadow-lg",
-                "md:max-h-[85dvh] md:w-[min(100%-2rem,34rem)] md:rounded-2xl md:border md:border-b",
+                "pointer-events-auto flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-4xl border-x border-t border-b-0 border-border/70 bg-card shadow-[0_-18px_48px_rgba(0,0,0,0.24)]",
+                "md:max-h-[85dvh] md:w-[min(100%-2rem,34rem)] md:rounded-2xl md:border md:border-b md:shadow-2xl",
                 className,
             )}
             style={
@@ -297,11 +293,12 @@ const ModalHandle: FC<ModalHandleProps> = ({
     onPointerDown,
     ...props
 }) => {
-    const { isDesktopViewport, sheetDragControls } = useModalRootContext(
-        "Modal.Handle",
-    );
+    const { isDesktopViewport, sheetDragControls } =
+        useModalRootContext("Modal.Handle");
 
-    const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const handlePointerDown = (
+        event: ReactPointerEvent<HTMLDivElement>,
+    ): void => {
         onPointerDown?.(event);
 
         if (event.defaultPrevented || isDesktopViewport) {
@@ -316,6 +313,7 @@ const ModalHandle: FC<ModalHandleProps> = ({
             data-slot="modal-handle-row"
             className={cn(
                 "relative flex items-center justify-center px-4 pt-3 pb-2 touch-none md:hidden",
+                "text-muted-foreground",
                 className,
             )}
             onPointerDown={handlePointerDown}
@@ -324,7 +322,7 @@ const ModalHandle: FC<ModalHandleProps> = ({
             {children ?? (
                 <div
                     data-slot="modal-handle"
-                    className="bg-muted-foreground/35 pointer-events-none absolute top-1.5 left-1/2 h-1.5 w-10 -translate-x-1/2 rounded-full"
+                    className="bg-muted-foreground/30 pointer-events-none absolute top-1.5 left-1/2 h-1.5 w-10 -translate-x-1/2 rounded-full"
                 />
             )}
         </div>
@@ -336,11 +334,12 @@ const ModalHeader: FC<ModalHeaderProps> = ({
     onPointerDown,
     ...props
 }) => {
-    const { isDesktopViewport, sheetDragControls } = useModalRootContext(
-        "Modal.Header",
-    );
+    const { isDesktopViewport, sheetDragControls } =
+        useModalRootContext("Modal.Header");
 
-    const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>): void => {
+    const handlePointerDown = (
+        event: ReactPointerEvent<HTMLDivElement>,
+    ): void => {
         onPointerDown?.(event);
 
         if (event.defaultPrevented || isDesktopViewport) {
@@ -358,7 +357,7 @@ const ModalHeader: FC<ModalHeaderProps> = ({
         <div
             data-slot="modal-header"
             className={cn(
-                "grid grid-cols-[auto_1fr_auto] items-start gap-2 px-4 pt-4 pb-3 touch-none md:px-6 md:pt-4 md:touch-auto",
+                "grid grid-cols-[auto_1fr_auto] items-start gap-2 px-4 pt-4 pb-3 touch-none md:px-6 md:pt-4 md:pb-4 md:touch-auto",
                 className,
             )}
             onPointerDown={handlePointerDown}
@@ -372,7 +371,7 @@ const ModalHeaderLeft: FC<ModalHeaderLeftProps> = ({ className, ...props }) => {
         <div
             data-slot="modal-header-left"
             className={cn(
-                "flex min-h-9 min-w-9 items-center justify-start",
+                "flex min-h-11 min-w-11 items-center justify-start md:min-h-9 md:min-w-9",
                 className,
             )}
             {...props}
@@ -388,7 +387,7 @@ const ModalHeaderCenter: FC<ModalHeaderCenterProps> = ({
         <div
             data-slot="modal-header-center"
             className={cn(
-                "flex min-w-0 flex-col items-center gap-1 pt-0.5 text-center md:items-start md:text-left",
+                "flex min-w-0 flex-col items-center gap-1.5 pt-3 text-center md:mt-0 md:gap-1 md:text-left",
                 className,
             )}
             {...props}
@@ -404,7 +403,7 @@ const ModalHeaderRight: FC<ModalHeaderRightProps> = ({
         <div
             data-slot="modal-header-right"
             className={cn(
-                "flex min-h-9 min-w-9 items-center justify-end",
+                "flex min-h-11 min-w-11 items-center justify-end md:min-h-9 md:min-w-9",
                 className,
             )}
             {...props}
@@ -415,7 +414,10 @@ const ModalHeaderRight: FC<ModalHeaderRightProps> = ({
 const ModalTitle: FC<ModalTitleProps> = ({ className, ...props }) => {
     return (
         <DialogTitle
-            className={cn("text-base md:text-lg", className)}
+            className={cn(
+                "text-xl font-semibold tracking-tight text-foreground md:text-lg",
+                className,
+            )}
             {...props}
         />
     );
@@ -426,7 +428,13 @@ const ModalDescription: FC<ModalDescriptionProps> = ({
     ...props
 }) => {
     return (
-        <DialogDescription className={cn("text-sm", className)} {...props} />
+        <DialogDescription
+            className={cn(
+                "text-muted-foreground mx-auto max-w-[30ch] text-base leading-[1.45] md:mx-0 md:max-w-none md:text-sm md:leading-5",
+                className,
+            )}
+            {...props}
+        />
     );
 };
 
@@ -435,7 +443,7 @@ const ModalBody: FC<ModalBodyProps> = ({ className, ...props }) => {
         <div
             data-slot="modal-body"
             className={cn(
-                "min-h-0 flex-1 overflow-y-auto px-4 pb-4 md:px-6 md:pb-6",
+                "min-h-0 flex-1 overflow-y-auto px-5 pb-5 md:px-6 md:pb-6",
                 className,
             )}
             {...props}
@@ -449,6 +457,7 @@ const ModalFooter: FC<ModalFooterProps> = ({ className, ...props }) => {
             data-slot="modal-footer"
             className={cn(
                 "border-border/80 shrink-0 border-t px-4 py-3 md:px-6 md:py-4",
+                "bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/85",
                 className,
             )}
             {...props}
@@ -483,12 +492,12 @@ const ModalCloseButton: FC<ModalCloseButtonProps> = ({
     return (
         <DialogClose
             className={cn(
-                "text-muted-foreground hover:text-foreground inline-flex size-9 items-center justify-center rounded-full border border-input bg-background shadow-xs transition-colors outline-none hover:bg-accent",
+                "text-muted-foreground hover:text-foreground inline-flex size-11 items-center justify-center rounded-full border border-border/80 bg-background shadow-sm transition-colors outline-none hover:bg-accent md:size-9 md:shadow-xs",
                 className,
             )}
             {...props}
         >
-            {children ?? <X className="size-4" />}
+            {children ?? <X className="size-5 md:size-4" />}
             <span className="sr-only">Close</span>
         </DialogClose>
     );
@@ -506,10 +515,13 @@ const ModalConfirmButton: FC<ModalConfirmButtonProps> = ({
             type={type}
             variant="default"
             size={size}
-            className={cn("rounded-full shadow-xs", className)}
+            className={cn(
+                "size-11 rounded-full shadow-sm md:size-9 md:shadow-xs",
+                className,
+            )}
             {...props}
         >
-            {children ?? <Check />}
+            {children ?? <Check className="size-5 md:size-4" />}
         </Button>
     );
 };

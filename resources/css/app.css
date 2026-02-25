@@ -139,6 +139,22 @@
         @apply bg-background text-foreground antialiased;
     }
 
+    /* Capacitor default: app-like non-selectable text. Use Tailwind `select-text`
+       (or another explicit user-select utility) on content that should be copyable. */
+    html[data-app-target="capacitor"],
+    body[data-app-target="capacitor"] {
+        -webkit-user-select: none;
+        user-select: none;
+    }
+
+    body[data-app-target="capacitor"] input,
+    body[data-app-target="capacitor"] textarea,
+    body[data-app-target="capacitor"] [contenteditable=""],
+    body[data-app-target="capacitor"] [contenteditable="true"] {
+        -webkit-user-select: text;
+        user-select: text;
+    }
+
     html,
     body,
     #app {
