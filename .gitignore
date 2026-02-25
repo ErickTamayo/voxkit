@@ -17,6 +17,8 @@
 /public/build
 /public/hot
 /public/storage
+/storybook-static
+/debug-storybook.log
 /storage/*.key
 /storage/pail
 /vendor

@@ -152,6 +152,28 @@
         min-height: 100dvh;
     }
 
+    .app-root-viewport-lock {
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    .app-root-safe-frame {
+        display: flex;
+        min-height: 0;
+        height: 100%;
+        flex-direction: column;
+    }
+
+    .app-root-scroll-region {
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .safe-area-inset {
         padding-top: var(--safe-area-top);
         padding-right: var(--safe-area-right);

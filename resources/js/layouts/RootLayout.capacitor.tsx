@@ -19,8 +19,15 @@ const RootLayout: FC<RootLayoutProps> = ({ children }) => {
     useCapacitorAndroidBackHandler();
 
     return (
-        <div className="app-root-viewport safe-area-inset" data-app-target="capacitor">
-            {children}
+        <div
+            className="app-root-viewport app-root-viewport-lock"
+            data-app-target="capacitor"
+        >
+            <div className="app-root-safe-frame safe-area-inset">
+                <div className="app-root-scroll-region">
+                    {children}
+                </div>
+            </div>
         </div>
     );
 };
