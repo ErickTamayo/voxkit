@@ -52,6 +52,11 @@ Apply this skill for platform foundation work in `voxkit`.
 
 - Centralize target/capability checks in shared platform utilities/hooks (for example under `resources/js/lib/` or a dedicated platform module).
 - Reusable viewport/media-query hooks belong in `resources/js/hooks/` (not inside UI primitive component files).
+- Before creating a new foundation helper/hook/utility, run a quick local reuse discovery scan to avoid duplicating logic that is already local but not currently visible.
+- Search by both likely names and behavior/side-effects (for example `data-app-target`, safe-area CSS variable set/restore, listener registration/cleanup, platform detection) because shared logic may be named differently.
+- Use this search scope ladder (stop early if you find a good fit): current file/folder -> `resources/js/layouts/` + sibling hooks -> `resources/js/hooks/` + `resources/js/lib/` -> repo-wide targeted `rg`.
+- High duplicate-risk areas in this domain: document/html/body attribute mirroring, CSS custom property set/restore, platform target checks, and event listener cleanup logic.
+- After the scan, choose one path explicitly: reuse, adapt, extract shared helper, or keep local with a short reason in the plan/review summary (`Reuse scan: searched ..., chose ... because ...`).
 - If a JS media query is required to complement Tailwind styling (for example animation behavior), align it to Tailwind defaults and add a code comment noting the matching Tailwind breakpoint token (for example `md = 48rem`) and update requirement if breakpoints are customized.
 - Feature routes and route-local components should consume shared policies/hooks instead of calling `Capacitor.isNativePlatform()` directly.
 - Target-specific navigation container behavior belongs in root layout variants, not feature routes.
@@ -101,10 +106,11 @@ Apply this skill for platform foundation work in `voxkit`.
 3. Keep changes inside foundation boundaries (Vite config, root layouts, shared primitives, platform utilities).
 4. Avoid introducing feature-route platform branches.
 5. Decide test coverage for the step (focused unit test and/or simulator/device manual check).
-6. Run a targeted verification (build, typecheck, or focused test).
-7. Stop for review unless explicitly waived.
-8. If a 3rd-party integration is involved, cite the official guide/example and confirm whether the implementation follows it or an approved deviation.
-9. If a shared UI primitive API is involved, confirm the API remains composition-first (dot notation compound components when applicable) and does not drift into prop-surface customization.
+6. Run a local reuse discovery scan before adding new non-trivial helper/hook logic and record the result.
+7. Run a targeted verification (build, typecheck, or focused test).
+8. Stop for review unless explicitly waived.
+9. If a 3rd-party integration is involved, cite the official guide/example and confirm whether the implementation follows it or an approved deviation.
+10. If a shared UI primitive API is involved, confirm the API remains composition-first (dot notation compound components when applicable) and does not drift into prop-surface customization.
 
 ## Validation Checklist
 
@@ -114,6 +120,7 @@ Apply this skill for platform foundation work in `voxkit`.
 - Modal API remains one API while presentation changes by policy.
 - Safe-area logic is limited to allowed layers.
 - No direct platform checks were added to feature routes.
+- A local reuse discovery scan was completed before adding new non-trivial helpers/hooks/utilities.
 - Relevant automated tests were added/updated when feasible for changed foundation logic.
 - Native-only behavior was manually validated on simulator/device when applicable.
 - 3rd-party integrations follow official guidance when available (or the deviation was explicitly approved and documented in the review summary).

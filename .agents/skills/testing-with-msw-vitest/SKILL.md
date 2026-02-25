@@ -41,6 +41,13 @@ Follow this workflow for API-backed frontend tests.
 ## 5. Keep suite maintainable
 
 - Keep fixtures local until repeated enough to extract.
+- Before creating a new test helper/wrapper/fixture builder, run a quick local reuse discovery scan to avoid duplicating hidden-but-existing local helpers.
+- Search by both likely names and behavior/contract terms (route/operation name, auth/session state, storage keys, error shape, redirect behavior), not just the guessed helper name.
+- Use this search scope ladder (stop early if you find a good fit): current test file/folder -> sibling feature tests -> shared test bootstrap/setup -> repo-wide targeted `rg` over `__tests__`, `mocks`, and `test` helpers.
+- Common duplicate-risk areas: render wrappers, auth/session setup helpers, storage reset helpers, repeated MSW handler factories, and repeated GraphQL error payload builders.
+- After the scan, choose one path explicitly: reuse, adapt existing local helper, extract a shared helper, or keep a new fixture local.
+- If extracting, keep the helper scoped to one concern (rendering, network handlers, auth/session, storage reset) and avoid generic catch-all `testUtils` buckets.
+- For non-trivial test additions, record one line in the plan/review summary: `Reuse scan: searched ..., chose ... because ...`.
 - Use stable module-level helpers for common rendering/mocking patterns.
 - Keep test names behavior-specific and readable.
 
@@ -50,5 +57,6 @@ Follow this workflow for API-backed frontend tests.
 - MSW handlers are scoped and reset safely.
 - Assertions reflect user-visible outcomes.
 - No test depends on real network or shared mutable global state.
+- Local reuse discovery scan was completed before introducing new non-trivial test helpers/fixtures.
 
 For project-specific setup and commands, read `references/testing-standards.md`.

@@ -21,6 +21,12 @@ Follow this workflow when implementing or refactoring UI components.
 - Put business/domain reusable components in `resources/js/components/`.
 - Keep route-specific UI in `resources/js/routes/<route>/`.
 - Keep one-off UI local unless reuse/complexity justifies extraction.
+- Before creating a new helper/hook/predicate, run a quick local reuse discovery scan to avoid duplicating logic that is already local but out of context.
+- Search by both likely names and behavior/side-effects (for example interaction predicates, `data-*` selectors, DOM attribute sync, safe-area handling), not just the guessed helper name.
+- Use this search scope ladder (stop early if you find a good fit): current file/folder -> sibling component family -> `resources/js/components/ui/`, `resources/js/hooks/`, `resources/js/lib/` -> repo-wide targeted `rg`.
+- After the scan, choose one path explicitly: reuse existing helper, adapt an existing helper, extract a shared helper, or keep a new helper local.
+- In plan/review summaries for non-trivial UI changes, record one line: `Reuse scan: searched ..., chose ... because ...`.
+- If creating a new helper, use a searchable name and colocate tests with the owning component family when behavior is deterministic.
 - When a UI primitive grows beyond a single file (supporting subcomponents, helpers, local types), move it into its own folder under `resources/js/components/ui/<component>/` and split supporting parts into their own files.
 - Even when split across files, preserve a composable compound API exposed via dot notation (for example `Modal.Root`, `Modal.Overlay`, `Modal.Content`, etc.).
 - Do not use barrel exports (`index.ts`) to assemble the dot-notation API.
@@ -148,6 +154,7 @@ export default AccountRoute;
 - Confirm import ordering follows project conventions.
 - Confirm no accidental barrel-export patterns were introduced.
 - Confirm route/component files do not accumulate large inline helper blocks.
+- Confirm a local reuse discovery scan was done before introducing new non-trivial helpers/hooks/predicates.
 - Confirm 3rd-party primitive integrations follow an official recommended pattern when one exists (or the deviation was explicitly approved).
 
 ## 9. State, Hooks, and Performance
