@@ -7,6 +7,14 @@ description: "Define and maintain the shared frontend foundation for web and Cap
 
 Apply this skill for platform foundation work in `voxkit`.
 
+## Official Pattern First (3rd-party + tooling integrations)
+
+- Before implementing non-trivial integrations with external libraries/frameworks/tooling used by the platform foundation (for example Capacitor APIs, Radix primitives, Motion animation/presence patterns, Vite plugin hooks/resolvers), check official docs/guides/examples first.
+- Prefer sources in this order: official docs -> official examples -> maintainer repository examples -> community posts.
+- If an official integration guide exists (for example Motion + Radix), follow that pattern before inventing custom orchestration.
+- If you intentionally deviate, state why, list the risk/tradeoff, and get approval before implementing the deviation.
+- In `make -> review` summaries for these steps, include the source link(s) and the exact pattern being followed.
+
 ## Decision Baseline (Authoritative)
 
 - Two axes only:
@@ -43,6 +51,8 @@ Apply this skill for platform foundation work in `voxkit`.
 ## Platform Branching Boundaries
 
 - Centralize target/capability checks in shared platform utilities/hooks (for example under `resources/js/lib/` or a dedicated platform module).
+- Reusable viewport/media-query hooks belong in `resources/js/hooks/` (not inside UI primitive component files).
+- If a JS media query is required to complement Tailwind styling (for example animation behavior), align it to Tailwind defaults and add a code comment noting the matching Tailwind breakpoint token (for example `md = 48rem`) and update requirement if breakpoints are customized.
 - Feature routes and route-local components should consume shared policies/hooks instead of calling `Capacitor.isNativePlatform()` directly.
 - Target-specific navigation container behavior belongs in root layout variants, not feature routes.
 
@@ -53,6 +63,8 @@ Apply this skill for platform foundation work in `voxkit`.
 - `capacitor` target:
   - may render bottom tab bar and app-specific navigation surfaces
 - Breakpoint changes (layout density, stacking, spacing, action placement) should use Tailwind breakpoints and remain breakpoint-driven, not target-driven, unless there is a clear product reason.
+- For UI primitives with structural variation (for example modal overlays/headers/actions), prefer composable compound APIs with dot notation (`Modal.Root`, `Modal.Overlay`, etc.) over prop-driven style escape hatches.
+- If a primitive is split across multiple files, keep the public compound API intact without using barrel exports.
 
 ## Safe Area Policy
 
@@ -91,6 +103,8 @@ Apply this skill for platform foundation work in `voxkit`.
 5. Decide test coverage for the step (focused unit test and/or simulator/device manual check).
 6. Run a targeted verification (build, typecheck, or focused test).
 7. Stop for review unless explicitly waived.
+8. If a 3rd-party integration is involved, cite the official guide/example and confirm whether the implementation follows it or an approved deviation.
+9. If a shared UI primitive API is involved, confirm the API remains composition-first (dot notation compound components when applicable) and does not drift into prop-surface customization.
 
 ## Validation Checklist
 
@@ -102,3 +116,5 @@ Apply this skill for platform foundation work in `voxkit`.
 - No direct platform checks were added to feature routes.
 - Relevant automated tests were added/updated when feasible for changed foundation logic.
 - Native-only behavior was manually validated on simulator/device when applicable.
+- 3rd-party integrations follow official guidance when available (or the deviation was explicitly approved and documented in the review summary).
+- Shared UI primitives remain composable (compound API) and supporting hooks/helpers are extracted to appropriate files/scopes.

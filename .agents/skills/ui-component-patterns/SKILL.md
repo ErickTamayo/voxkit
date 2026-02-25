@@ -7,12 +7,23 @@ description: Create and refactor reusable UI components with composition-first A
 
 Follow this workflow when implementing or refactoring UI components.
 
+## 0. Confirm official integration patterns first (3rd-party primitives/libraries)
+
+- Before integrating non-trivial 3rd-party UI libraries (for example Radix, Motion, shadcn composition patterns, gesture libraries, virtualization, animation libraries), check official docs/guides/examples first.
+- Prefer sources in this order: official docs -> official examples -> maintainer repo examples -> community posts.
+- If an official guide exists (for example Motion + Radix integration), follow that pattern before inventing custom orchestration.
+- If you must deviate, state the reason and tradeoffs in the plan/review summary and get approval before coding the deviation.
+- In major-step reviews, include the source link(s) and name the pattern you followed.
+
 ## 1. Choose component ownership level first
 
 - Put framework-level primitives in `resources/js/components/ui/`.
 - Put business/domain reusable components in `resources/js/components/`.
 - Keep route-specific UI in `resources/js/routes/<route>/`.
 - Keep one-off UI local unless reuse/complexity justifies extraction.
+- When a UI primitive grows beyond a single file (supporting subcomponents, helpers, local types), move it into its own folder under `resources/js/components/ui/<component>/` and split supporting parts into their own files.
+- Even when split across files, preserve a composable compound API exposed via dot notation (for example `Modal.Root`, `Modal.Overlay`, `Modal.Content`, etc.).
+- Do not use barrel exports (`index.ts`) to assemble the dot-notation API.
 
 ## 2. Define API and typing before implementation
 
@@ -30,6 +41,9 @@ Follow this workflow when implementing or refactoring UI components.
 - Do not use anonymous default exports.
 - Do not start with explicit component return signatures like `(...): React.JSX.Element`.
 - Only if the canonical pattern is not feasible (for example complex generics or overloaded signatures), fall back to explicit prop/return typing after attempting the canonical signature first.
+- Prefer composable APIs (children + compound subcomponents) over prop-surface customization for UI primitives.
+- Do not default to `*ClassName` escape-hatch props for primitive internals (`overlayClassName`, `contentClassName`, etc.) when composition can express the customization.
+- Do not add auto-wrapping render adapters (for example helpers that coerce strings into component slots) unless there is a critical need and the deviation is approved.
 
 ## 3. Use composition-first rendering
 
@@ -37,6 +51,8 @@ Follow this workflow when implementing or refactoring UI components.
 - Use compound components only when the API benefits from flexible composition.
 - Keep global state out of component internals.
 - Move non-trivial pure helpers out of route/component render files into colocated `utils/`.
+- For compound primitives, expose intentional subcomponents instead of pushing structure customization into props.
+- If a consumer needs a different button/layout/content surface, they should render that structure through composition.
 
 ## 4. Apply consistent styling conventions
 
@@ -132,6 +148,7 @@ export default AccountRoute;
 - Confirm import ordering follows project conventions.
 - Confirm no accidental barrel-export patterns were introduced.
 - Confirm route/component files do not accumulate large inline helper blocks.
+- Confirm 3rd-party primitive integrations follow an official recommended pattern when one exists (or the deviation was explicitly approved).
 
 ## 9. State, Hooks, and Performance
 
@@ -144,6 +161,9 @@ export default AccountRoute;
   - own one concern,
   - live in the appropriate `hooks/` scope,
   - return a consistent object shape.
+- Do not define non-trivial custom hooks inside component files.
+- Reusable hooks belong in `resources/js/hooks/`.
+- Component-scoped hooks may live in a component-local `hooks/` folder only when they are truly local to that component family.
 - Prefer business logic in hooks rather than directly in components.
 - Do not use `useEffect` for derived state.
 - Do not use `useCallback` and `useMemo` (React Compiler project rule).

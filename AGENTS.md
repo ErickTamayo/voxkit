@@ -5,6 +5,9 @@
 *   **Approval**: Wait for explicit acceptance of the plan before modifying code.
 *   **Make -> Review (Major Steps)**: For major steps (architecture, build config, shared foundations, multi-file refactors), implement one step at a time, run the smallest relevant check, stop, summarize what changed, and wait for review before continuing.
 *   **Review Gate Opt-Out**: Only skip a major-step review stop when the user explicitly says to continue without stopping for review.
+*   **Official Pattern First (3rd-party integrations)**: Before implementing non-trivial integrations with external libraries/frameworks (animation, gestures, modal/dialog primitives, routing, build tooling, etc.), check official docs/guides/examples first and follow the recommended pattern when one exists.
+*   **Primary Source Order**: Prefer sources in this order: official docs -> official examples -> maintainer repository examples -> community posts.
+*   **Deviation Disclosure**: If deviating from an official pattern, explain why, what risk/tradeoff it introduces, and get approval before implementing the deviation.
 
 ## Global Guardrails
 
@@ -16,6 +19,7 @@
 * Do not create documentation files unless explicitly requested.
 * If frontend changes do not appear, ask whether `npm run build`, `npm run dev`, or `composer run dev` is running.
 * Keep replies concise and focused on useful details.
+* For non-trivial 3rd-party integrations, include the official source link(s) and the specific pattern being followed in the plan/review summary.
 
 ## Skills Activation
 
