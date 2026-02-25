@@ -1,11 +1,8 @@
-import { act, createElement } from "react";
-import { createRoot } from "react-dom/client";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { LogoutDocument } from "@/routes/authentication/authentication.graphql.ts";
 import { useSession } from "@/hooks/useSession";
 import { useSessionStore } from "@/stores/sessionStore";
-
-(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const clearAuthTokenMock = vi.fn();
 const shouldUseTokenAuthMock = vi.fn();
@@ -29,39 +26,6 @@ vi.mock("@/lib/authSession", () => ({
     writeAuthToken: (token: string) => writeAuthTokenMock(token),
 }));
 
-function renderUseSession(): {
-    current: ReturnType<typeof useSession>;
-    cleanup: () => void;
-} {
-    const container = document.createElement("div");
-    const root = createRoot(container);
-    let hookValue: ReturnType<typeof useSession> | null = null;
-
-    function Probe(): null {
-        hookValue = useSession();
-
-        return null;
-    }
-
-    act(() => {
-        root.render(createElement(Probe));
-    });
-
-    if (hookValue === null) {
-        throw new Error("Hook probe did not capture useSession value.");
-    }
-
-    return {
-        current: hookValue,
-        cleanup: () => {
-            act(() => {
-                root.unmount();
-            });
-            container.remove();
-        },
-    };
-}
-
 describe("useSession", () => {
     beforeEach(() => {
         clearAuthTokenMock.mockReset();
@@ -72,7 +36,8 @@ describe("useSession", () => {
         useSessionStore.getState().setStatus("checking");
     });
 
-    it("sets authenticated status when me query returns user data", () => {
+    it("sets authenticated status when me query returns user data", async () => {
+        // Arrange
         shouldUseTokenAuthMock.mockReturnValue(false);
         useQueryMock.mockReturnValue({
             data: {
@@ -86,13 +51,18 @@ describe("useSession", () => {
         });
         useMutationMock.mockImplementation(() => [vi.fn(), { loading: false }]);
 
-        const hook = renderUseSession();
+        // Act
+        const { result, unmount } = renderHook(() => useSession());
 
-        expect(hook.current.status).toBe("authenticated");
-        hook.cleanup();
+        // Assert
+        await waitFor(() => {
+            expect(result.current.status).toBe("authenticated");
+        });
+        unmount();
     });
 
-    it("sets unauthenticated status on unauthenticated me error", () => {
+    it("sets unauthenticated status on unauthenticated me error", async () => {
+        // Arrange
         shouldUseTokenAuthMock.mockReturnValue(false);
         useQueryMock.mockReturnValue({
             data: undefined,
@@ -102,13 +72,18 @@ describe("useSession", () => {
         });
         useMutationMock.mockImplementation(() => [vi.fn(), { loading: false }]);
 
-        const hook = renderUseSession();
+        // Act
+        const { result, unmount } = renderHook(() => useSession());
 
-        expect(hook.current.status).toBe("unauthenticated");
-        hook.cleanup();
+        // Assert
+        await waitFor(() => {
+            expect(result.current.status).toBe("unauthenticated");
+        });
+        unmount();
     });
 
     it("logout always sets unauthenticated and clears token even if mutation fails", async () => {
+        // Arrange
         const logoutMutationMock = vi.fn().mockRejectedValue(new Error("Network error"));
         const refetchMock = vi.fn().mockResolvedValue({
             data: {
@@ -137,17 +112,20 @@ describe("useSession", () => {
             return [vi.fn(), { loading: false }];
         });
 
-        const hook = renderUseSession();
+        // Act
+        const { result, unmount } = renderHook(() => useSession());
         await act(async () => {
-            await expect(hook.current.logout()).resolves.toBeUndefined();
+            await expect(result.current.logout()).resolves.toBeUndefined();
         });
 
+        // Assert
         expect(clearAuthTokenMock).toHaveBeenCalledTimes(1);
         expect(useSessionStore.getState().status).toBe("unauthenticated");
-        hook.cleanup();
+        unmount();
     });
 
     it("refreshSessionStatus sets unauthenticated when me refetch resolves to null", async () => {
+        // Arrange
         const refetchMock = vi.fn().mockResolvedValue({
             data: {
                 me: null,
@@ -167,16 +145,19 @@ describe("useSession", () => {
         });
         useMutationMock.mockImplementation(() => [vi.fn(), { loading: false }]);
 
-        const hook = renderUseSession();
+        // Act
+        const { result, unmount } = renderHook(() => useSession());
         await act(async () => {
-            await hook.current.refreshSessionStatus();
+            await result.current.refreshSessionStatus();
         });
 
+        // Assert
         expect(useSessionStore.getState().status).toBe("unauthenticated");
-        hook.cleanup();
+        unmount();
     });
 
     it("does not override authenticated status when session check query is skipped", () => {
+        // Arrange
         useSessionStore.getState().setStatus("authenticated");
 
         shouldUseTokenAuthMock.mockReturnValue(false);
@@ -188,9 +169,11 @@ describe("useSession", () => {
         });
         useMutationMock.mockImplementation(() => [vi.fn(), { loading: false }]);
 
-        const hook = renderUseSession();
+        // Act
+        const { unmount } = renderHook(() => useSession());
 
+        // Assert
         expect(useSessionStore.getState().status).toBe("authenticated");
-        hook.cleanup();
+        unmount();
     });
 });

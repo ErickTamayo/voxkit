@@ -357,7 +357,7 @@ const ModalHeader: FC<ModalHeaderProps> = ({
         <div
             data-slot="modal-header"
             className={cn(
-                "grid grid-cols-[auto_1fr_auto] items-start gap-2 px-4 pt-4 pb-3 touch-none md:px-6 md:pt-4 md:pb-4 md:touch-auto",
+                "grid grid-cols-[auto_1fr_auto] items-start gap-x-2 px-4 pt-4 pb-3 touch-none md:gap-x-0 md:px-6 md:pt-4 md:pb-4 md:touch-auto",
                 className,
             )}
             onPointerDown={handlePointerDown}
@@ -371,7 +371,7 @@ const ModalHeaderLeft: FC<ModalHeaderLeftProps> = ({ className, ...props }) => {
         <div
             data-slot="modal-header-left"
             className={cn(
-                "flex min-h-11 min-w-11 items-center justify-start md:min-h-9 md:min-w-9",
+                "flex min-h-11 min-w-11 items-center justify-start md:min-h-0 md:min-w-0",
                 className,
             )}
             {...props}
@@ -387,7 +387,7 @@ const ModalHeaderCenter: FC<ModalHeaderCenterProps> = ({
         <div
             data-slot="modal-header-center"
             className={cn(
-                "flex min-w-0 flex-col items-center gap-1.5 pt-3 text-center md:mt-0 md:gap-1 md:text-left",
+                "flex min-w-0 flex-col items-center gap-1.5 pt-3 text-center md:mt-0 md:items-start md:gap-1",
                 className,
             )}
             {...props}
@@ -403,7 +403,7 @@ const ModalHeaderRight: FC<ModalHeaderRightProps> = ({
         <div
             data-slot="modal-header-right"
             className={cn(
-                "flex min-h-11 min-w-11 items-center justify-end md:min-h-9 md:min-w-9",
+                "flex min-h-11 min-w-11 items-center justify-end md:min-h-0 md:min-w-0",
                 className,
             )}
             {...props}
@@ -415,7 +415,7 @@ const ModalTitle: FC<ModalTitleProps> = ({ className, ...props }) => {
     return (
         <DialogTitle
             className={cn(
-                "text-xl font-semibold tracking-tight text-foreground md:text-lg",
+                "self-center text-center text-xl font-semibold tracking-tight text-foreground md:self-start md:text-left md:text-lg",
                 className,
             )}
             {...props}
@@ -430,7 +430,7 @@ const ModalDescription: FC<ModalDescriptionProps> = ({
     return (
         <DialogDescription
             className={cn(
-                "text-muted-foreground mx-auto max-w-[30ch] text-base leading-[1.45] md:mx-0 md:max-w-none md:text-sm md:leading-5",
+                "text-muted-foreground mx-auto max-w-[30ch] self-center text-center text-base leading-[1.45] md:mx-0 md:max-w-none md:self-start md:text-left md:text-sm md:leading-5",
                 className,
             )}
             {...props}

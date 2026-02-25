@@ -12,6 +12,7 @@ Follow this workflow for API-backed frontend tests.
 - Test one user-visible behavior per case.
 - Assert rendered outcomes and state transitions, not implementation details.
 - Cover both success and failure paths for changed behavior.
+- Structure tests in clear `Arrange -> Act -> Assert` sections (comments are fine when helpful).
 
 ## 2. Model network behavior with MSW
 
@@ -22,6 +23,11 @@ Follow this workflow for API-backed frontend tests.
 ## 3. Keep tests deterministic
 
 - Use shared setup from the project test bootstrap.
+- For React-rendering tests, prefer React Testing Library (`render`, `renderHook`) instead of manual `createRoot` / custom probe components.
+- Follow React Testing Library best practices in React-rendering tests:
+  - prefer JSX test fixtures over `React.createElement(...)`
+  - use `.test.tsx` / `.spec.tsx` when the test renders JSX
+  - prefer user-facing queries from RTL (`screen`/query helpers) over DOM plumbing when practical
 - Wait for async transitions with testing-library async utilities.
 - Reset handlers, cookies, and local storage between tests.
 - Avoid real network calls in tests.
