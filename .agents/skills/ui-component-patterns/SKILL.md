@@ -67,6 +67,18 @@ Follow this workflow when implementing or refactoring UI components.
 - Keep variant logic close to the styled element.
 - Avoid introducing custom style abstractions unless repeated usage justifies extraction.
 
+### Visual bug triage before patching (especially Motion / animated UI)
+
+- Before changing styles, restate the symptom in one line and separate concerns: positioning, clipping, transform state, focus/outline styles, animation timing.
+- Re-derive the coordinate system first:
+  - which ancestor is the positioning context (`relative`, `absolute`, `fixed`),
+  - whether the visual should be clipped (`overflow-*`),
+  - whether the animated element already has transforms (`translateX/Y`, scale).
+- For Motion elements, do not assume removing a property from `animate` resets it. If a previous version animated `y`, explicitly set `y: 0` (or the intended value) when refactoring to avoid stale transforms.
+- Explain the fix model before editing (2-4 lines and, when helpful, a tiny snippet). Example: "indicator is anchored to tablist bottom, animate only `x`/`width`, and explicitly reset `y: 0`."
+- Make one visual change at a time, verify in Storybook, then continue tuning.
+- If a visual bug persists after two quick patches, stop and re-check the layout/animation model instead of continuing incremental CSS tweaks.
+
 ## 5. Apply async UI boundaries for data-driven routes
 
 - Prefer `useSuspenseQuery` for Apollo route/component data.
