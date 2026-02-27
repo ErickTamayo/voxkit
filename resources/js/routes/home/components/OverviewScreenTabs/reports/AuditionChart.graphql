@@ -1,0 +1,38 @@
+query OverviewAuditionChart($period: CompactRange!) {
+  auditionMetrics(period: $period) {
+    metrics {
+      current {
+        total
+        comparison_total
+        trend_percentage
+      }
+      booking_rate
+    }
+    period {
+      start
+      end
+    }
+  }
+  auditionChart(period: $period) {
+    chart {
+      timestamp
+      value
+    }
+    effectiveWindow {
+      start
+      end
+      daysInRange
+      wasExpanded
+      expansionReason
+    }
+    range {
+      ... on CompactRangeValue {
+        value
+      }
+      ... on DateRange {
+        start
+        end
+      }
+    }
+  }
+}

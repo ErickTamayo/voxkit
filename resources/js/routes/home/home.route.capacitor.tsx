@@ -8,51 +8,37 @@ import type {
     OverviewScreenTabModule,
 } from "@/routes/home/components/OverviewScreenTabs/types";
 
-const ReportsOverviewPlaceholderScreen: FC = () => {
-    return (
-        <section className="space-y-2">
-            <h2 className="text-lg font-semibold">Reports</h2>
-            <p className="text-sm text-muted-foreground">
-                Placeholder tab screen module for the Capacitor overview tabs scaffold.
-            </p>
-        </section>
+const loadReportsOverviewScreen = async (): Promise<OverviewScreenTabModule> => {
+    const module = await import(
+        "@/routes/home/components/OverviewScreenTabs/reports/ReportsScreen"
     );
+
+    return { default: module.ReportsScreen };
 };
 
-const InboxOverviewPlaceholderScreen: FC = () => {
-    return (
-        <section className="space-y-2">
-            <h2 className="text-lg font-semibold">Inbox</h2>
-            <p className="text-sm text-muted-foreground">
-                Placeholder tab screen module for the Capacitor overview tabs scaffold.
-            </p>
-        </section>
+const loadActivitiesOverviewScreen = async (): Promise<OverviewScreenTabModule> => {
+    const module = await import(
+        "@/routes/home/components/OverviewScreenTabs/activities/ActivitiesScreen"
     );
-};
 
-const loadReportsOverviewPlaceholderScreen = async (): Promise<OverviewScreenTabModule> => {
-    return { default: ReportsOverviewPlaceholderScreen };
-};
-
-const loadInboxOverviewPlaceholderScreen = async (): Promise<OverviewScreenTabModule> => {
-    return { default: InboxOverviewPlaceholderScreen };
+    return { default: module.ActivitiesScreen };
 };
 
 const OVERVIEW_SCREEN_TABS: OverviewScreenTabDefinition[] = [
     {
         value: "reports",
         label: "Reports",
-        loadScreen: loadReportsOverviewPlaceholderScreen,
+        loadScreen: loadReportsOverviewScreen,
         loadingFallback: (
             <p className="text-sm text-muted-foreground">Loading reports...</p>
         ),
     },
     {
-        value: "inbox",
-        label: "Inbox",
-        loadScreen: loadInboxOverviewPlaceholderScreen,
+        value: "activities",
+        label: "Activities",
+        loadScreen: loadActivitiesOverviewScreen,
         loadingFallback: (
-            <p className="text-sm text-muted-foreground">Loading inbox...</p>
+            <p className="text-sm text-muted-foreground">Loading activities...</p>
         ),
     },
 ];
@@ -93,9 +79,9 @@ const HomeRouteCapacitor: FC = () => {
     }
 
     return (
-        <main className="bg-background min-h-screen p-4">
-            <div className="mx-auto flex min-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col gap-4">
-                <header className="space-y-2 px-1 pt-2">
+        <main className="bg-background min-h-full">
+            <div className="flex min-h-full w-full flex-col">
+                <header className="space-y-2 px-4 pb-3 pt-4">
                     <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
                         Capacitor Overview
                     </p>

@@ -1,0 +1,21 @@
+query OverviewRevenueByCategory($period: CompactRange!) {
+  revenueByCategory(period: $period, take: 5) {
+    baseCurrency
+    period {
+      start
+      end
+    }
+    categories {
+      category
+      percentage_of_total
+      paid {
+        amount_cents
+        currency
+      }
+      in_flight {
+        amount_cents
+        currency
+      }
+    }
+  }
+}

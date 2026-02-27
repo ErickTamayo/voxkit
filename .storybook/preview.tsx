@@ -6,6 +6,7 @@ import { Toaster } from "../resources/js/components/ui/toaster";
 
 type PlatformTarget = "web" | "capacitor";
 type SafeAreaPreset = "none" | "iphone";
+type ColorMode = "dark" | "light";
 
 const SAFE_AREA_PRESETS: Record<SafeAreaPreset, {
     top: string;
@@ -29,6 +30,7 @@ const SAFE_AREA_PRESETS: Record<SafeAreaPreset, {
 
 interface StorybookPlatformFrameProps {
     children: ReactNode;
+    colorMode: ColorMode;
     platformTarget: PlatformTarget;
     safeArea: {
         top: string;
@@ -40,6 +42,7 @@ interface StorybookPlatformFrameProps {
 
 const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
     children,
+    colorMode,
     platformTarget,
     safeArea,
 }) => {
@@ -58,6 +61,7 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
         };
         const previousHtmlTarget = root.getAttribute("data-app-target");
         const previousBodyTarget = body.getAttribute("data-app-target");
+        const hadDarkClass = root.classList.contains("dark");
 
         // Storybook stories render modals via portals (`document.body`), so fake safe-area vars
         // applied only to the story wrapper won't reach the portaled modal content. Mirror the
@@ -75,6 +79,12 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
         } else {
             root.removeAttribute("data-app-target");
             body.removeAttribute("data-app-target");
+        }
+
+        if (colorMode === "dark") {
+            root.classList.add("dark");
+        } else {
+            root.classList.remove("dark");
         }
 
         return () => {
@@ -113,8 +123,15 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
             } else {
                 body.setAttribute("data-app-target", previousBodyTarget);
             }
+
+            if (hadDarkClass) {
+                root.classList.add("dark");
+            } else {
+                root.classList.remove("dark");
+            }
         };
     }, [
+        colorMode,
         platformTarget,
         safeArea.bottom,
         safeArea.left,
@@ -185,6 +202,19 @@ const preview: Preview = {
                 dynamicTitle: true,
             },
         },
+        colorMode: {
+            name: "Theme",
+            description: "Tailwind color mode for story rendering",
+            defaultValue: "light",
+            toolbar: {
+                icon: "mirror",
+                items: [
+                    { value: "light", title: "Light" },
+                    { value: "dark", title: "Dark" },
+                ],
+                dynamicTitle: true,
+            },
+        },
     },
     parameters: {
         layout: "fullscreen",
@@ -226,10 +256,15 @@ const preview: Preview = {
         (Story, context) => {
             const platformTarget = (context.globals.platformTarget ?? "web") as PlatformTarget;
             const safeAreaPreset = (context.globals.safeAreaPreset ?? "none") as SafeAreaPreset;
+            const colorMode = (context.globals.colorMode ?? "light") as ColorMode;
             const safeArea = SAFE_AREA_PRESETS[safeAreaPreset] ?? SAFE_AREA_PRESETS.none;
 
             return (
-                <StorybookPlatformFrame platformTarget={platformTarget} safeArea={safeArea}>
+                <StorybookPlatformFrame
+                    colorMode={colorMode}
+                    platformTarget={platformTarget}
+                    safeArea={safeArea}
+                >
                     <Story />
                 </StorybookPlatformFrame>
             );

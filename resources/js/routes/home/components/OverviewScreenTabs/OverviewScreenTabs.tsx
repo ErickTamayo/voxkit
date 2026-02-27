@@ -311,7 +311,7 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
         return (
             <section
                 className={cn(
-                    "rounded-2xl border border-dashed border-border/80 bg-card/70 p-4 text-sm text-muted-foreground",
+                    "bg-card/70 p-4 text-sm text-muted-foreground",
                     className,
                 )}
             >
@@ -323,7 +323,7 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
     return (
         <section
             className={cn(
-                "flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/80 bg-card",
+                "flex min-h-0 flex-1 flex-col overflow-hidden bg-card",
                 className,
             )}
         >
@@ -331,17 +331,17 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
                 ref={tabListRef}
                 role="tablist"
                 aria-label="Overview sections"
-                className="border-border/80 relative flex items-center gap-1 border-b p-2"
+                className="border-border/80 relative flex items-stretch gap-0 border-b bg-background px-4"
             >
                 {activeIndicatorRect !== null ? (
                     <motion.div
                         aria-hidden="true"
-                        className="pointer-events-none absolute bottom-px left-0 rounded-full bg-primary"
+                        className="pointer-events-none absolute bottom-0 left-0 bg-primary"
                         initial={false}
                         animate={{
-                            x: activeIndicatorRect.x + 12,
+                            x: activeIndicatorRect.x,
                             y: 0,
-                            width: Math.max(12, activeIndicatorRect.width - 24),
+                            width: activeIndicatorRect.width,
                             height: 2,
                         }}
                         transition={
@@ -374,11 +374,11 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
                             tabIndex={isSelected ? 0 : -1}
                             onClick={() => handleTabSelect(tab.value)}
                             className={cn(
-                                "relative z-10 rounded-xl px-3 py-2 text-sm font-medium transition-colors outline-none",
+                                "relative z-10 inline-flex min-h-12 items-center px-3 text-sm font-semibold whitespace-nowrap transition-colors outline-none",
                                 "focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2",
                                 isSelected
                                     ? "text-primary"
-                                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                                    : "text-muted-foreground hover:text-foreground",
                             )}
                         >
                             {tab.label}
@@ -387,7 +387,7 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
                 })}
             </div>
 
-            <div className="min-h-0 flex-1 p-4">
+            <div className="min-h-0 flex-1">
                 <div
                     ref={panelViewportRef}
                     className="relative h-full min-h-0 overflow-hidden"

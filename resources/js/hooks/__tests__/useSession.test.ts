@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { LogoutDocument } from "@/routes/authentication/authentication.graphql.ts";
+import { RevokeTokenDocument } from "@/routes/authentication/authentication.graphql.ts";
 import { useSession } from "@/hooks/useSession";
 import { useSessionStore } from "@/stores/sessionStore";
 
@@ -105,7 +105,7 @@ describe("useSession", () => {
             refetch: refetchMock,
         });
         useMutationMock.mockImplementation((document: unknown) => {
-            if (document === LogoutDocument) {
+            if (document === RevokeTokenDocument) {
                 return [logoutMutationMock, { loading: false }];
             }
 

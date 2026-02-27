@@ -11,7 +11,7 @@ import { isUnauthenticatedError } from "@/lib/authErrors";
 import {
     AuthenticateWithCodeDocument,
     RequestAuthenticationCodeDocument,
-    LogoutDocument,
+    RevokeTokenDocument,
 } from "@/routes/authentication/authentication.graphql.ts";
 import { type SessionStatus, useSessionStore } from "@/stores/sessionStore";
 
@@ -49,7 +49,7 @@ export function useSession(): {
 
     const [requestAuthenticationCodeMutation, { loading: isRequestingAuthenticationCode }] = useMutation(RequestAuthenticationCodeDocument);
     const [authenticateWithCodeMutation, { loading: isAuthenticatingWithCode }] = useMutation(AuthenticateWithCodeDocument);
-    const [logoutMutation, { loading: isLoggingOut }] = useMutation(LogoutDocument);
+    const [revokeTokenMutation, { loading: isLoggingOut }] = useMutation(RevokeTokenDocument);
 
     useEffect(() => {
         if (!shouldCheckSession) {
@@ -104,12 +104,12 @@ export function useSession(): {
 
             const response = result.data?.requestAuthenticationCode;
             switch (response?.__typename) {
-                case "RequestAuthenticationCodeSuccess":
+                case "RequestAuthenticationCodeOkResponse":
                     return {
                         ok: true,
                         errorMessage: null,
                     };
-                case "AuthenticationRateLimitError":
+                case "RequestAuthenticationCodeErrorResponse":
                     return {
                         ok: false,
                         errorMessage: response.message,
@@ -146,7 +146,7 @@ export function useSession(): {
 
             const response = result.data?.authenticateWithCode;
             switch (response?.__typename) {
-                case "AuthenticateWithCodeTokenSuccess":
+                case "AuthenticateWithCodeTokenResponse":
                     await writeAuthToken(response.token);
                     setAuthenticated();
 
@@ -154,7 +154,7 @@ export function useSession(): {
                         ok: true,
                         errorMessage: null,
                     };
-                case "AuthenticateWithCodeSessionSuccess":
+                case "AuthenticateWithCodeOkResponse":
                     await clearAuthToken();
                     setAuthenticated();
 
@@ -162,8 +162,7 @@ export function useSession(): {
                         ok: true,
                         errorMessage: null,
                     };
-                case "AuthenticateWithCodeInvalidCodeError":
-                case "AuthenticationRateLimitError":
+                case "AuthenticateWithCodeErrorResponse":
                     setUnauthenticated();
 
                     return {
@@ -193,7 +192,7 @@ export function useSession(): {
         await clearAuthToken();
 
         try {
-            await logoutMutation();
+            await revokeTokenMutation();
         } catch {
             // Proceed with local logout regardless of remote mutation outcome.
         }

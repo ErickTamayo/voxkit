@@ -61,7 +61,7 @@ const httpLink = new BatchHttpLink({
 const AUTH_ERROR_IGNORED_OPERATIONS = new Set([
     "RequestAuthenticationCode",
     "AuthenticateWithCode",
-    "Logout",
+    "RevokeToken",
 ]);
 
 async function handleUnauthenticatedTransportError(): Promise<void> {

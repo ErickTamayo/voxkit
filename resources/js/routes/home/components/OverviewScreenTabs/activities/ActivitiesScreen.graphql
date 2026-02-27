@@ -1,0 +1,94 @@
+query OverviewActivitiesSection($where: QueryActivitiesWhereWhereConditions) {
+  activities(where: $where) {
+    __typename
+    paginatorInfo {
+      __typename
+      total
+    }
+    data {
+      id
+      trigger
+      action
+      created_at
+      targetable {
+        __typename
+        ...OverviewActivityAuditionFragment
+        ...OverviewActivityJobFragment
+        ...OverviewActivityInvoiceFragment
+        ...OverviewActivityUsageRightFragment
+      }
+      notes(first: 999) {
+        paginatorInfo {
+          count
+        }
+      }
+    }
+  }
+}
+
+fragment OverviewActivityAuditionFragment on Audition {
+  id
+  response_deadline
+  project_deadline
+  project_title
+  status
+  sourceable {
+    __typename
+    ...OverviewActivityPlatformFragment
+    ...OverviewActivityContactFragment
+  }
+}
+
+fragment OverviewActivityJobFragment on Job {
+  id
+  session_date
+  delivery_deadline
+  project_title
+}
+
+fragment OverviewActivityInvoiceFragment on Invoice {
+  id
+  job {
+    project_title
+  }
+  total {
+    original {
+      currency
+      amount_cents
+    }
+  }
+}
+
+fragment OverviewActivityUsageRightFragment on UsageRight {
+  id
+  expiration_date
+  usable {
+    __typename
+    ... on Audition {
+      id
+      project_title
+    }
+    ... on Job {
+      id
+      project_title
+    }
+  }
+}
+
+fragment OverviewActivityPlatformFragment on Platform {
+  id
+  name
+}
+
+fragment OverviewActivityContactFragment on Contact {
+  id
+  email
+  name
+}
+
+mutation OverviewArchiveActivity($input: ArchiveActivityInput!) {
+  archiveActivity(input: $input) {
+    id
+    action
+  }
+}

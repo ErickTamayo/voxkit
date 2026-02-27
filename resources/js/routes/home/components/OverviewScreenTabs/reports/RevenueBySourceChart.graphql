@@ -1,0 +1,22 @@
+query OverviewRevenueBySource($period: CompactRange!) {
+  revenueBySource(period: $period, take: 5) {
+    baseCurrency
+    period {
+      start
+      end
+    }
+    sources {
+      source_type
+      source_name
+      percentage_of_total
+      paid {
+        amount_cents
+        currency
+      }
+      in_flight {
+        amount_cents
+        currency
+      }
+    }
+  }
+}

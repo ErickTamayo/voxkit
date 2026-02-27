@@ -1,0 +1,48 @@
+query OverviewRevenueChart($period: CompactRange!) {
+  revenueMetrics(period: $period) {
+    baseCurrency
+    period {
+      start
+      end
+    }
+    metrics {
+      current {
+        total {
+          amount_cents
+          currency
+        }
+        trend_percentage
+        comparison_total {
+          amount_cents
+          currency
+        }
+      }
+      pipeline {
+        total {
+          amount_cents
+          currency
+        }
+      }
+      in_flight {
+        total {
+          amount_cents
+          currency
+        }
+      }
+    }
+  }
+  revenueChart(period: $period) {
+    baseCurrency
+    effectiveWindow {
+      start
+      end
+      daysInRange
+      wasExpanded
+      expansionReason
+    }
+    chart {
+      timestamp
+      value
+    }
+  }
+}

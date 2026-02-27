@@ -1,0 +1,9 @@
+query OverviewActivitiesTabBadge($where: QueryActivitiesWhereWhereConditions) {
+  activities(where: $where) {
+    __typename
+    paginatorInfo {
+      __typename
+      total
+    }
+  }
+}
