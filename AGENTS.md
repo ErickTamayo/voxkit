@@ -5,6 +5,9 @@
 *   **Approval**: Wait for explicit acceptance of the plan before modifying code.
 *   **Make -> Review (Major Steps)**: For major steps (architecture, build config, shared foundations, multi-file refactors), implement one step at a time, run the smallest relevant check, stop, summarize what changed, and wait for review before continuing.
 *   **Review Gate Opt-Out**: Only skip a major-step review stop when the user explicitly says to continue without stopping for review.
+*   **`go` Scope Semantics**: A `go`/`go ahead` response only approves the last explicitly written scope. It does not auto-approve unresolved decisions or new sub-decisions discovered during implementation.
+*   **Ambiguity Gate (Before Edits)**: Before editing files, list unresolved choices. If any remain, ask and wait. This is mandatory whenever there are 2+ valid options with meaningful tradeoffs (library usage, architecture, naming, UX/interaction behavior, or foundation wiring).
+*   **Step Scope Lock**: For each major-step check-in, include `Approved scope`, `Out of scope`, and `Open decisions`. `Open decisions` must be empty before code edits begin.
 *   **Official Pattern First (3rd-party integrations)**: Before implementing non-trivial integrations with external libraries/frameworks (animation, gestures, modal/dialog primitives, routing, build tooling, etc.), check official docs/guides/examples first and follow the recommended pattern when one exists.
 *   **Primary Source Order**: Prefer sources in this order: official docs -> official examples -> maintainer repository examples -> community posts.
 *   **Deviation Disclosure**: If deviating from an official pattern, explain why, what risk/tradeoff it introduces, and get approval before implementing the deviation.
@@ -17,6 +20,7 @@
 * Stick to the current project structure; do not create new base folders without approval.
 * Do not change dependencies without approval.
 * Do not create documentation files unless explicitly requested.
+* Do not mention external project/repo names in code comments, plans, or docs unless explicitly requested.
 * If frontend changes do not appear, ask whether `npm run build`, `npm run dev`, or `composer run dev` is running.
 * Keep replies concise and focused on useful details.
 * For non-trivial 3rd-party integrations, include the official source link(s) and the specific pattern being followed in the plan/review summary.

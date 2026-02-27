@@ -5,8 +5,10 @@ import { createRoot } from "react-dom/client";
 import { Redirect, Route, Switch } from "wouter";
 import { AuthenticatedRoute } from "@/components/AuthenticatedRoute";
 import { RouteWithLayout } from "@/components/RouteWithLayout";
+import { Toaster } from "@/components/ui/toaster";
 import RootLayout from "@/layouts/RootLayout";
 import { apolloClient } from "@/lib/apolloClient";
+import "@/i18n/config";
 import { AuthenticationCardLayout } from "@/routes/authentication/layouts/AuthenticationCard.layout";
 
 const HomeRoute = lazy(() => import("@/routes/home/home.route"));
@@ -52,6 +54,7 @@ const App: FC = () => {
     return (
         <RootLayout>
             <AppContent />
+            <Toaster />
         </RootLayout>
     );
 };

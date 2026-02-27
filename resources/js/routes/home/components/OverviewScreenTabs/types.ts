@@ -17,6 +17,8 @@ export interface OverviewScreenTabsProps {
     tabs: OverviewScreenTabDefinition[];
     initialValue?: string;
     onValueChange?: (value: string) => void;
+    onSwipeStart?: () => void;
+    onTabPress?: (value: string) => void;
     value?: string;
     className?: string;
 }

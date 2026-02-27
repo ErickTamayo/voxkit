@@ -18,13 +18,15 @@ describe("overviewScreenTabsSwipe", () => {
         expect(
             getOverviewScreenTabsSwipeOutcome({
                 deltaX: OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeDistancePx,
+                deltaY: 0,
                 velocityX: 0,
             }),
         ).toBe("prev");
 
         expect(
             getOverviewScreenTabsSwipeOutcome({
-                deltaX: 4,
+                deltaX: OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.minVelocityDistancePx,
+                deltaY: 0,
                 velocityX: OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeVelocityXPxPerSecond,
             }),
         ).toBe("prev");
@@ -34,16 +36,52 @@ describe("overviewScreenTabsSwipe", () => {
         expect(
             getOverviewScreenTabsSwipeOutcome({
                 deltaX: -OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeDistancePx,
+                deltaY: 0,
                 velocityX: 0,
             }),
         ).toBe("next");
 
         expect(
             getOverviewScreenTabsSwipeOutcome({
-                deltaX: -4,
+                deltaX: -OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.minVelocityDistancePx,
+                deltaY: 0,
                 velocityX: -OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeVelocityXPxPerSecond,
             }),
         ).toBe("next");
+    });
+
+    it("does not change tab when vertical swipe dominates gesture intent", () => {
+        expect(
+            getOverviewScreenTabsSwipeOutcome({
+                deltaX: OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeDistancePx,
+                deltaY: 120,
+                velocityX: OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeVelocityXPxPerSecond + 30,
+            }),
+        ).toBe("stay");
+        expect(
+            getOverviewScreenTabsSwipeOutcome({
+                deltaX: -OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeDistancePx,
+                deltaY: -120,
+                velocityX: -OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeVelocityXPxPerSecond - 30,
+            }),
+        ).toBe("stay");
+    });
+
+    it("does not change tab on tiny horizontal jitter even with high velocity", () => {
+        expect(
+            getOverviewScreenTabsSwipeOutcome({
+                deltaX: OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.minVelocityDistancePx - 1,
+                deltaY: 0,
+                velocityX: OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeVelocityXPxPerSecond + 30,
+            }),
+        ).toBe("stay");
+        expect(
+            getOverviewScreenTabsSwipeOutcome({
+                deltaX: -(OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.minVelocityDistancePx - 1),
+                deltaY: 0,
+                velocityX: -OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG.changeVelocityXPxPerSecond - 30,
+            }),
+        ).toBe("stay");
     });
 
     it("supports config overrides for integration tuning", () => {
@@ -51,6 +89,7 @@ describe("overviewScreenTabsSwipe", () => {
             ...OVERVIEW_SCREEN_TABS_SWIPE_DEFAULT_CONFIG,
             changeDistancePx: 120,
             changeVelocityXPxPerSecond: 900,
+            minVelocityDistancePx: 24,
         };
 
         expect(
@@ -60,7 +99,7 @@ describe("overviewScreenTabsSwipe", () => {
             getOverviewScreenTabsSwipeOutcome({ deltaX: 121, velocityX: 0 }, config),
         ).toBe("prev");
         expect(
-            getOverviewScreenTabsSwipeOutcome({ deltaX: 0, velocityX: -950 }, config),
+            getOverviewScreenTabsSwipeOutcome({ deltaX: -25, velocityX: -950 }, config),
         ).toBe("next");
     });
 });

@@ -43,6 +43,8 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
     tabs,
     initialValue,
     onValueChange,
+    onSwipeStart,
+    onTabPress,
     value,
     className,
 }) => {
@@ -146,6 +148,8 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
     };
 
     const handleTabSelect = (nextValue: string): void => {
+        onTabPress?.(nextValue);
+
         if (nextValue === activeValue) {
             return;
         }
@@ -160,6 +164,7 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
     const handleTrackDragStart = (): void => {
         syncPanelViewportWidth();
         isTrackDraggingRef.current = true;
+        onSwipeStart?.();
     };
 
     const handleTrackDragEnd = (
@@ -176,6 +181,7 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
 
         const swipeOutcome = getOverviewScreenTabsSwipeOutcome({
             deltaX: info.offset.x,
+            deltaY: info.offset.y,
             velocityX: info.velocity.x,
         });
         let nextIndex = activeIndex;

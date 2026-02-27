@@ -17,7 +17,7 @@ export interface ModalSwipeDragInput {
 export type ModalSwipeReleaseOutcome = "dismiss" | "snap-back";
 
 /**
- * Foundation defaults copied from the existing voxspot mobile modal behavior.
+ * Foundation defaults copied from the existing mobile modal behavior.
  * Note: velocity units depend on the gesture source (RN PanResponder vs Motion).
  * The integration layer may tune `dismissVelocityYThreshold` if Motion reports
  * velocity in different units than React Native.

@@ -155,6 +155,50 @@ describe("OverviewScreenTabs", () => {
         expect(loadReportsScreen).toHaveBeenCalledTimes(1);
     });
 
+    it("notifies tab presses even when the active tab is pressed again", async () => {
+        // Arrange
+        const onTabPress = vi.fn();
+        const tabs: OverviewScreenTabDefinition[] = [
+            {
+                value: "reports",
+                label: "Reports",
+                loadScreen: async (): Promise<OverviewScreenTabModule> => {
+                    return { default: ReportsScreen };
+                },
+                loadingFallback: <p>Loading reports...</p>,
+            },
+            {
+                value: "inbox",
+                label: "Inbox",
+                loadScreen: async (): Promise<OverviewScreenTabModule> => {
+                    return { default: InboxScreen };
+                },
+                loadingFallback: <p>Loading inbox...</p>,
+            },
+        ];
+
+        // Act
+        render(
+            <OverviewScreenTabs
+                tabs={tabs}
+                initialValue="reports"
+                onTabPress={onTabPress}
+            />,
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText("Reports screen content")).toBeDefined();
+        });
+
+        fireEvent.click(screen.getByRole("tab", { name: "Reports" }));
+        fireEvent.click(screen.getByRole("tab", { name: "Inbox" }));
+
+        // Assert
+        expect(onTabPress).toHaveBeenCalledTimes(2);
+        expect(onTabPress).toHaveBeenNthCalledWith(1, "reports");
+        expect(onTabPress).toHaveBeenNthCalledWith(2, "inbox");
+    });
+
     it("retries a failed tab lazy load when the fallback retry action is pressed", async () => {
         // Arrange
         const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});

@@ -1,6 +1,8 @@
 import { useEffect, type CSSProperties, type FC, type ReactNode } from "react";
 import type { Preview } from "@storybook/react-vite";
 import "../resources/css/app.css";
+import "../resources/js/i18n/config";
+import { Toaster } from "../resources/js/components/ui/toaster";
 
 type PlatformTarget = "web" | "capacitor";
 type SafeAreaPreset = "none" | "iphone";
@@ -148,6 +150,7 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
                     <div className="app-root-scroll-region">
                         {children}
                     </div>
+                    <Toaster />
                 </div>
             </div>
         </div>
