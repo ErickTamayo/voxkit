@@ -323,7 +323,7 @@ const OverviewScreenTabs: FC<OverviewScreenTabsProps> = ({
     return (
         <section
             className={cn(
-                "flex min-h-0 flex-1 flex-col overflow-hidden bg-card",
+                "flex h-full min-h-0 flex-1 flex-col overflow-hidden bg-card",
                 className,
             )}
         >

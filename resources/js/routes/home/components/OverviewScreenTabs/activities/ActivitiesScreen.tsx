@@ -104,7 +104,7 @@ const ActivitiesScreen: FC = () => {
     }
 
     return (
-        <section className="-mx-4 h-full overflow-y-auto border-y border-border/70 bg-background">
+        <section className="-mx-4 safe-area-inset-bottom h-full overflow-y-auto border-y border-border/70 bg-background">
             <div className="divide-y divide-border/70">
                 {visibleActivities.map((activity) => {
                     return (

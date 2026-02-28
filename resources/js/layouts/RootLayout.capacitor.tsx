@@ -25,7 +25,7 @@ const RootLayout: FC<RootLayoutProps> = ({ children }) => {
             className="app-root-viewport app-root-viewport-lock"
             data-app-target="capacitor"
         >
-            <div className="app-root-safe-frame safe-area-inset">
+            <div className="app-root-safe-frame safe-area-inset-top safe-area-inset-x">
                 <div className="app-root-scroll-region">
                     {children}
                 </div>

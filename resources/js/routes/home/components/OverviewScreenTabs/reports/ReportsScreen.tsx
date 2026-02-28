@@ -22,7 +22,7 @@ const ReportsScreenContent: FC = () => {
     const { selectedRange, setSelectedRange } = useOverviewPeriod();
 
     return (
-        <div className="-mx-4 h-full overflow-y-auto border-y border-border/70 bg-background">
+        <div className="-mx-4 safe-area-inset-bottom h-full overflow-y-auto border-y border-border/70 bg-background">
             <div className="sticky top-0 z-10 border-b border-border/70 bg-background px-4 py-2">
                 <CompactRangeSelector
                     selectedRange={selectedRange}

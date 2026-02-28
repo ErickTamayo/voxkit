@@ -74,8 +74,13 @@ Apply this skill for platform foundation work in `voxkit`.
 ## Safe Area Policy
 
 - Root layouts own global safe-area padding rules.
+- Capacitor root layout default is `safe-area-inset-top safe-area-inset-x` (top + horizontal only).
+- Do not apply bottom safe-area inset globally at the Capacitor root frame.
+- Bottom inset is explicit and local to scroll/list content that needs it via `safe-area-inset-bottom`.
+- Storybook platform wrapper must mirror the same safe-area class composition as runtime root layouts.
 - Overlays/sheets/dialogs must be safe-area aware when fixed to viewport edges.
 - Sticky action bars/footers must account for safe-area bottom insets.
+- Avoid route-level negative-margin or height hacks to counteract safe-area wrappers; fix the shared wrappers instead.
 - Do not add ad hoc safe-area padding in feature route content unless a concrete exception is documented in code comments.
 
 ## Back Handling (Capacitor)
@@ -117,8 +122,10 @@ Apply this skill for platform foundation work in `voxkit`.
 - Web target still resolves default files (no `.capacitor.*` leakage).
 - Capacitor target resolves `.capacitor.*` variants when present.
 - Root layout variants are selected correctly.
+- Capacitor root frame uses top + x safe-area only, and Storybook wrapper matches it.
 - Modal API remains one API while presentation changes by policy.
 - Safe-area logic is limited to allowed layers.
+- Scroll/list content that must clear the home-indicator explicitly opts into `safe-area-inset-bottom`.
 - No direct platform checks were added to feature routes.
 - A local reuse discovery scan was completed before adding new non-trivial helpers/hooks/utilities.
 - Relevant automated tests were added/updated when feasible for changed foundation logic.

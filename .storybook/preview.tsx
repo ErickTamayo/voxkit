@@ -152,7 +152,9 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
     ].filter(Boolean).join(" ");
     const safeFrameClassName = [
         "app-root-safe-frame",
-        platformTarget === "capacitor" ? "safe-area-inset" : "",
+        platformTarget === "capacitor"
+            ? "safe-area-inset-top safe-area-inset-x"
+            : "",
     ].filter(Boolean).join(" ");
 
     return (
@@ -163,6 +165,32 @@ const StorybookPlatformFrame: FC<StorybookPlatformFrameProps> = ({
                 className={rootClassName}
                 style={rootStyle}
             >
+                {platformTarget === "capacitor" ? (
+                    <div className="pointer-events-none absolute inset-0 z-50">
+                        <div
+                            aria-hidden="true"
+                            className="absolute inset-x-0 top-0 border-amber-500/80"
+                            style={{
+                                height: "var(--safe-area-top)",
+                                backgroundColor: "rgb(245 158 11 / 0.2)",
+                                backgroundImage: "repeating-linear-gradient(135deg, rgb(245 158 11 / 0.3) 0px, rgb(245 158 11 / 0.3) 8px, transparent 8px, transparent 16px)",
+                                borderBottomWidth: "1px",
+                                borderBottomStyle: "dashed",
+                            }}
+                        />
+                        <div
+                            aria-hidden="true"
+                            className="absolute inset-x-0 bottom-0 border-amber-500/80"
+                            style={{
+                                height: "var(--safe-area-bottom)",
+                                backgroundColor: "rgb(245 158 11 / 0.2)",
+                                backgroundImage: "repeating-linear-gradient(135deg, rgb(245 158 11 / 0.3) 0px, rgb(245 158 11 / 0.3) 8px, transparent 8px, transparent 16px)",
+                                borderTopWidth: "1px",
+                                borderTopStyle: "dashed",
+                            }}
+                        />
+                    </div>
+                ) : null}
                 <div className={safeFrameClassName}>
                     <div className="app-root-scroll-region">
                         {children}

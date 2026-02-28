@@ -79,8 +79,8 @@ const HomeRouteCapacitor: FC = () => {
     }
 
     return (
-        <main className="bg-background min-h-full">
-            <div className="flex min-h-full w-full flex-col">
+        <main className="bg-background h-full min-h-full overflow-hidden">
+            <div className="flex h-full min-h-0 w-full flex-col">
                 <header className="space-y-2 px-4 pb-3 pt-4">
                     <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
                         Capacitor Overview
@@ -95,7 +95,7 @@ const HomeRouteCapacitor: FC = () => {
                 <OverviewScreenTabs
                     tabs={OVERVIEW_SCREEN_TABS}
                     initialValue="reports"
-                    className="min-h-0 flex-1"
+                    className="min-h-0 flex-1 overflow-hidden"
                 />
             </div>
         </main>
