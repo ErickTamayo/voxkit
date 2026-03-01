@@ -1,12 +1,22 @@
-import type { FC } from "react";
+import { Suspense, useEffect, useState, type FC } from "react";
+import { ErrorBoundary, type FallbackProps } from "react-error-boundary";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/useSession";
+import { OverviewHomeHeader } from "@/routes/home/components/OverviewHomeHeader";
 import { OverviewScreenTabs } from "@/routes/home/components/OverviewScreenTabs/OverviewScreenTabs";
 import type {
     OverviewScreenTabDefinition,
     OverviewScreenTabModule,
 } from "@/routes/home/components/OverviewScreenTabs/types";
+import {
+    createOverviewConsoleNavigationHandlers,
+    OverviewNavigationProvider,
+    type OverviewNavigationHandlers,
+} from "@/routes/home/components/overviewNavigation";
+import { OverviewMenuDrawerOverlay } from "@/routes/home/components/overlays/OverviewMenuDrawerOverlay";
+import { OverviewSearchOverlay } from "@/routes/home/components/overlays/OverviewSearchOverlay";
+import { OverviewSettingsOverlay } from "@/routes/home/components/overlays/OverviewSettingsOverlay";
 
 const loadReportsOverviewScreen = async (): Promise<OverviewScreenTabModule> => {
     const module = await import(
@@ -42,10 +52,62 @@ const OVERVIEW_SCREEN_TABS: OverviewScreenTabDefinition[] = [
         ),
     },
 ];
+type OverviewCapacitorOverlay = "menu" | "none" | "search" | "settings";
 
-const HomeRouteCapacitor: FC = () => {
+interface HomeRouteCapacitorProps {
+    initialOverlay?: OverviewCapacitorOverlay;
+}
+
+const OverviewHeaderSuspenseFallback: FC = () => {
+    return (
+        <header className="border-b border-border/70 bg-background px-4 py-3">
+            <p className="text-sm text-muted-foreground">Loading header...</p>
+        </header>
+    );
+};
+
+const OverviewHeaderErrorFallback: FC<FallbackProps> = ({
+    error,
+    resetErrorBoundary,
+}) => {
+    const errorMessage = error instanceof Error ? error.message : "Unknown header error.";
+
+    return (
+        <header className="border-b border-border/70 bg-background px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+                <p className="text-sm text-destructive">
+                    Header failed to load.
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={() => resetErrorBoundary()}>
+                    Retry
+                </Button>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">{errorMessage}</p>
+        </header>
+    );
+};
+
+const HomeRouteCapacitor: FC<HomeRouteCapacitorProps> = ({
+    initialOverlay = "none",
+}) => {
     const [, setLocation] = useLocation();
     const { status } = useSession();
+    const [activeOverlay, setActiveOverlay] = useState<OverviewCapacitorOverlay>(
+        initialOverlay,
+    );
+
+    useEffect(() => {
+        setActiveOverlay(initialOverlay);
+    }, [initialOverlay]);
+
+    const defaultNavigationHandlers = createOverviewConsoleNavigationHandlers();
+    const overviewNavigationHandlers: OverviewNavigationHandlers = {
+        ...defaultNavigationHandlers,
+        onOpenSearch: () => setActiveOverlay("search"),
+        onOpenMenuDrawer: () => setActiveOverlay("menu"),
+        onOpenSettings: () => setActiveOverlay("settings"),
+    };
+    const isOverviewHeaderEnabled = true;
 
     if (status !== "authenticated") {
         return (
@@ -81,22 +143,43 @@ const HomeRouteCapacitor: FC = () => {
     return (
         <main className="bg-background h-full min-h-full overflow-hidden">
             <div className="flex h-full min-h-0 w-full flex-col">
-                <header className="space-y-2 px-4 pb-3 pt-4">
-                    <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-                        Capacitor Overview
-                    </p>
-                    <h1 className="text-2xl font-semibold">Home</h1>
-                    <p className="text-sm text-muted-foreground">
-                        Scaffold for the swipeable overview tab pattern. Web and
-                        Capacitor implementations intentionally diverge.
-                    </p>
-                </header>
+                <OverviewNavigationProvider handlers={overviewNavigationHandlers}>
+                    {isOverviewHeaderEnabled ? (
+                        <ErrorBoundary FallbackComponent={OverviewHeaderErrorFallback}>
+                            <Suspense fallback={<OverviewHeaderSuspenseFallback />}>
+                                <OverviewHomeHeader
+                                    onOpenSearch={overviewNavigationHandlers.onOpenSearch}
+                                    onOpenMenuDrawer={overviewNavigationHandlers.onOpenMenuDrawer}
+                                    onOpenSettings={overviewNavigationHandlers.onOpenSettings}
+                                />
+                            </Suspense>
+                        </ErrorBoundary>
+                    ) : null}
+                    <OverviewScreenTabs
+                        tabs={OVERVIEW_SCREEN_TABS}
+                        initialValue="reports"
+                        className="min-h-0 flex-1 overflow-hidden"
+                    />
 
-                <OverviewScreenTabs
-                    tabs={OVERVIEW_SCREEN_TABS}
-                    initialValue="reports"
-                    className="min-h-0 flex-1 overflow-hidden"
-                />
+                    <OverviewSearchOverlay
+                        open={activeOverlay === "search"}
+                        onOpenChange={(open) => {
+                            setActiveOverlay(open ? "search" : "none");
+                        }}
+                    />
+                    <OverviewSettingsOverlay
+                        open={activeOverlay === "settings"}
+                        onOpenChange={(open) => {
+                            setActiveOverlay(open ? "settings" : "none");
+                        }}
+                    />
+                    <OverviewMenuDrawerOverlay
+                        open={activeOverlay === "menu"}
+                        onOpenChange={(open) => {
+                            setActiveOverlay(open ? "menu" : "none");
+                        }}
+                    />
+                </OverviewNavigationProvider>
             </div>
         </main>
     );

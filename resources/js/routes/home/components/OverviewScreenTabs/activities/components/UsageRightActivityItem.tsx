@@ -16,6 +16,7 @@ interface UsageRightActivityItemProps {
     action: Pick<OverviewActivityEntry, "created_at" | "trigger">;
     target: UsageRightActivityTarget;
     onArchivePress?: () => void;
+    onSnoozePress?: () => void;
     onPress?: () => void;
 }
 
@@ -23,6 +24,7 @@ const UsageRightActivityItem: FC<UsageRightActivityItemProps> = ({
     action,
     target,
     onArchivePress,
+    onSnoozePress,
     onPress,
 }) => {
     const { formatDuration, isOverdue } = useOverviewActivityTimeFormatter();
@@ -43,6 +45,7 @@ const UsageRightActivityItem: FC<UsageRightActivityItemProps> = ({
             timestamp={copy.timestamp}
             onPress={onPress}
             onArchivePress={onArchivePress}
+            onSnoozePress={onSnoozePress}
         />
     );
 };

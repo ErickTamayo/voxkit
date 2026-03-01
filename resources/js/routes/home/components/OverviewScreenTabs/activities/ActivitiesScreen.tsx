@@ -27,6 +27,10 @@ import {
     UsageRightActivityItem,
 } from "@/routes/home/components/OverviewScreenTabs/activities/components/UsageRightActivityItem";
 import type { OverviewActivityEntry } from "@/routes/home/components/OverviewScreenTabs/activities/types";
+import {
+    useOverviewNavigation,
+    type OverviewNavigationHandlers,
+} from "@/routes/home/components/overviewNavigation";
 
 const OPEN_ACTIVITIES_WHERE = {
     column: QueryActivitiesWhereColumn.Action,
@@ -43,6 +47,7 @@ function hasTargetable(activity: OverviewActivityEntry): activity is RenderableA
 
 const ActivitiesScreen: FC = () => {
     const { t } = useTranslation();
+    const overviewNavigation = useOverviewNavigation();
     const { data } = useSuspenseQuery(OverviewActivitiesSectionDocument, {
         variables: {
             where: OPEN_ACTIVITIES_WHERE,
@@ -111,9 +116,11 @@ const ActivitiesScreen: FC = () => {
                         <ActivityListRow
                             key={activity.id}
                             activity={activity}
+                            navigation={overviewNavigation}
                             onArchive={(activityId) => {
                                 void handleArchive(activityId);
                             }}
+                            onSnooze={overviewNavigation.onSnoozeActivity}
                         />
                     );
                 })}
@@ -124,12 +131,23 @@ const ActivitiesScreen: FC = () => {
 
 interface ActivityListRowProps {
     activity: RenderableActivity;
+    navigation: Pick<
+        OverviewNavigationHandlers,
+        "onOpenAudition" | "onOpenInvoice" | "onOpenJob" | "onOpenUsageRight"
+    >;
     onArchive: (activityId: string) => void;
+    onSnooze: (input: {
+        activityId: string;
+        targetId: string;
+        targetType: "Audition" | "Invoice" | "Job" | "UsageRight";
+    }) => void;
 }
 
 const ActivityListRow: FC<ActivityListRowProps> = ({
     activity,
+    navigation,
     onArchive,
+    onSnooze,
 }) => {
     const target = activity.targetable;
 
@@ -139,7 +157,15 @@ const ActivityListRow: FC<ActivityListRowProps> = ({
                 <AuditionActivityItem
                     action={activity}
                     target={target}
+                    onPress={() => navigation.onOpenAudition(target.id)}
                     onArchivePress={() => onArchive(activity.id)}
+                    onSnoozePress={() => {
+                        onSnooze({
+                            activityId: activity.id,
+                            targetId: target.id,
+                            targetType: "Audition",
+                        });
+                    }}
                 />
             );
         case "Job":
@@ -147,7 +173,15 @@ const ActivityListRow: FC<ActivityListRowProps> = ({
                 <JobActivityItem
                     action={activity}
                     target={target}
+                    onPress={() => navigation.onOpenJob(target.id)}
                     onArchivePress={() => onArchive(activity.id)}
+                    onSnoozePress={() => {
+                        onSnooze({
+                            activityId: activity.id,
+                            targetId: target.id,
+                            targetType: "Job",
+                        });
+                    }}
                 />
             );
         case "Invoice":
@@ -155,7 +189,15 @@ const ActivityListRow: FC<ActivityListRowProps> = ({
                 <InvoiceActivityItem
                     action={activity}
                     target={target}
+                    onPress={() => navigation.onOpenInvoice(target.id)}
                     onArchivePress={() => onArchive(activity.id)}
+                    onSnoozePress={() => {
+                        onSnooze({
+                            activityId: activity.id,
+                            targetId: target.id,
+                            targetType: "Invoice",
+                        });
+                    }}
                 />
             );
         case "UsageRight":
@@ -163,7 +205,15 @@ const ActivityListRow: FC<ActivityListRowProps> = ({
                 <UsageRightActivityItem
                     action={activity}
                     target={target}
+                    onPress={() => navigation.onOpenUsageRight(target.id)}
                     onArchivePress={() => onArchive(activity.id)}
+                    onSnoozePress={() => {
+                        onSnooze({
+                            activityId: activity.id,
+                            targetId: target.id,
+                            targetType: "UsageRight",
+                        });
+                    }}
                 />
             );
     }

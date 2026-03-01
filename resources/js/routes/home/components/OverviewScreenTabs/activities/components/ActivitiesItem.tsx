@@ -1,7 +1,7 @@
 import type { FC } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import type { LucideIcon } from "lucide-react";
-import { Archive } from "lucide-react";
+import { AlarmClock, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { ActivityCopyModel } from "@/routes/home/components/OverviewScreenTabs/activities/activityCopyMapper";
@@ -19,6 +19,7 @@ interface ActivitiesItemProps {
     iconBackgroundClassName: string;
     iconClassName: string;
     onArchivePress?: () => void;
+    onSnoozePress?: () => void;
     onPress?: () => void;
 }
 
@@ -30,6 +31,7 @@ const ActivitiesItem: FC<ActivitiesItemProps> = ({
     iconBackgroundClassName,
     iconClassName,
     onArchivePress,
+    onSnoozePress,
     onPress,
 }) => {
     const { t } = useTranslation();
@@ -88,18 +90,33 @@ const ActivitiesItem: FC<ActivitiesItemProps> = ({
                 header
             )}
 
-            {onArchivePress !== undefined ? (
-                <div className="pl-10">
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-muted-foreground hover:text-foreground"
-                        onClick={onArchivePress}
-                    >
-                        <Archive className="size-4" />
-                        {t("Archive")}
-                    </Button>
+            {onSnoozePress !== undefined || onArchivePress !== undefined ? (
+                <div className="flex flex-wrap items-center gap-1 pl-10">
+                    {onSnoozePress !== undefined ? (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={onSnoozePress}
+                        >
+                            <AlarmClock className="size-4" />
+                            {t("Snooze")}
+                        </Button>
+                    ) : null}
+
+                    {onArchivePress !== undefined ? (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-foreground"
+                            onClick={onArchivePress}
+                        >
+                            <Archive className="size-4" />
+                            {t("Archive")}
+                        </Button>
+                    ) : null}
                 </div>
             ) : null}
         </article>

@@ -14,6 +14,19 @@ const useMutationMock = vi.fn();
 const useSuspenseQueryMock = vi.fn();
 const toastErrorMock = vi.fn();
 const toastSuccessMock = vi.fn();
+const openAuditionMock = vi.fn();
+const openAgentMock = vi.fn();
+const openClientMock = vi.fn();
+const openExpenseMock = vi.fn();
+const openInvoiceMock = vi.fn();
+const openJobMock = vi.fn();
+const openNoteMock = vi.fn();
+const openPlatformMock = vi.fn();
+const openUsageRightMock = vi.fn();
+const openMenuDrawerMock = vi.fn();
+const openSearchMock = vi.fn();
+const openSettingsMock = vi.fn();
+const snoozeActivityMock = vi.fn();
 
 vi.mock("@apollo/client/react", () => {
     return {
@@ -40,21 +53,53 @@ vi.mock("sonner", () => {
     };
 });
 
+vi.mock("@/routes/home/components/overviewNavigation", () => {
+    return {
+        useOverviewNavigation: () => ({
+            onOpenAgent: (...args: unknown[]) => openAgentMock(...args),
+            onOpenAudition: (...args: unknown[]) => openAuditionMock(...args),
+            onOpenClient: (...args: unknown[]) => openClientMock(...args),
+            onOpenExpense: (...args: unknown[]) => openExpenseMock(...args),
+            onOpenInvoice: (...args: unknown[]) => openInvoiceMock(...args),
+            onOpenJob: (...args: unknown[]) => openJobMock(...args),
+            onOpenMenuDrawer: (...args: unknown[]) => openMenuDrawerMock(...args),
+            onOpenNote: (...args: unknown[]) => openNoteMock(...args),
+            onOpenPlatform: (...args: unknown[]) => openPlatformMock(...args),
+            onOpenSearch: (...args: unknown[]) => openSearchMock(...args),
+            onOpenSettings: (...args: unknown[]) => openSettingsMock(...args),
+            onOpenUsageRight: (...args: unknown[]) => openUsageRightMock(...args),
+            onSnoozeActivity: (...args: unknown[]) => snoozeActivityMock(...args),
+        }),
+    };
+});
+
 vi.mock(
     "@/routes/home/components/OverviewScreenTabs/activities/components/AuditionActivityItem",
     () => {
         return {
             AuditionActivityItem: ({
                 target,
+                onPress,
                 onArchivePress,
+                onSnoozePress,
             }: {
                 target: { id: string };
+                onPress?: () => void;
                 onArchivePress?: () => void;
+                onSnoozePress?: () => void;
             }) => {
                 return (
-                    <button type="button" onClick={onArchivePress}>
-                        archive-audition-{target.id}
-                    </button>
+                    <div>
+                        <button type="button" onClick={onPress}>
+                            open-audition-{target.id}
+                        </button>
+                        <button type="button" onClick={onSnoozePress}>
+                            snooze-audition-{target.id}
+                        </button>
+                        <button type="button" onClick={onArchivePress}>
+                            archive-audition-{target.id}
+                        </button>
+                    </div>
                 );
             },
         };
@@ -135,6 +180,19 @@ beforeEach(() => {
     useSuspenseQueryMock.mockReset();
     toastSuccessMock.mockReset();
     toastErrorMock.mockReset();
+    openAuditionMock.mockReset();
+    openAgentMock.mockReset();
+    openClientMock.mockReset();
+    openExpenseMock.mockReset();
+    openInvoiceMock.mockReset();
+    openJobMock.mockReset();
+    openNoteMock.mockReset();
+    openPlatformMock.mockReset();
+    openUsageRightMock.mockReset();
+    openMenuDrawerMock.mockReset();
+    openSearchMock.mockReset();
+    openSettingsMock.mockReset();
+    snoozeActivityMock.mockReset();
 });
 
 afterEach(() => {
@@ -202,5 +260,24 @@ describe("ActivitiesScreen", () => {
         });
         expect(toastErrorMock).toHaveBeenCalledTimes(1);
         expect(toastSuccessMock).not.toHaveBeenCalled();
+    });
+
+    it("routes audition presses and snooze actions through overview navigation handlers", () => {
+        useSuspenseQueryMock.mockReturnValue({
+            data: createQueryData([createAuditionActivity("activity-3")]),
+        });
+        useMutationMock.mockReturnValue([vi.fn()]);
+
+        render(<ActivitiesScreen />);
+
+        fireEvent.click(screen.getByRole("button", { name: "open-audition-aud-activity-3" }));
+        fireEvent.click(screen.getByRole("button", { name: "snooze-audition-aud-activity-3" }));
+
+        expect(openAuditionMock).toHaveBeenCalledWith("aud-activity-3");
+        expect(snoozeActivityMock).toHaveBeenCalledWith({
+            activityId: "activity-3",
+            targetId: "aud-activity-3",
+            targetType: "Audition",
+        });
     });
 });

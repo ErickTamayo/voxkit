@@ -5,9 +5,8 @@ import { MeDocument } from "@/hooks/useUser.graphql.ts";
 export function useUser(): {
     user: MeQuery["me"];
 } {
-    const { data } = useSuspenseQuery(MeDocument, {
-        fetchPolicy: "network-only",
-    });
+    console.count("useUser-query");
+    const { data } = useSuspenseQuery(MeDocument);
 
     if (data.me === null || data.me === undefined) {
         throw new Error("Expected authenticated user data.");

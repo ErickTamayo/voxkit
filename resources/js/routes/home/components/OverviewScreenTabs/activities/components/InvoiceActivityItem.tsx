@@ -16,6 +16,7 @@ interface InvoiceActivityItemProps {
     action: Pick<OverviewActivityEntry, "created_at" | "trigger">;
     target: InvoiceActivityTarget;
     onArchivePress?: () => void;
+    onSnoozePress?: () => void;
     onPress?: () => void;
 }
 
@@ -23,6 +24,7 @@ const InvoiceActivityItem: FC<InvoiceActivityItemProps> = ({
     action,
     target,
     onArchivePress,
+    onSnoozePress,
     onPress,
 }) => {
     const { formatDuration, isOverdue } = useOverviewActivityTimeFormatter();
@@ -43,6 +45,7 @@ const InvoiceActivityItem: FC<InvoiceActivityItemProps> = ({
             timestamp={copy.timestamp}
             onPress={onPress}
             onArchivePress={onArchivePress}
+            onSnoozePress={onSnoozePress}
         />
     );
 };

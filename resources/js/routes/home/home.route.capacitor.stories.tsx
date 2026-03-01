@@ -1,4 +1,4 @@
-import { useEffect, useState, type FC } from "react";
+import { useEffect, useState, type ComponentProps, type FC } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { MockedResponse } from "@apollo/client/testing";
 import { MockedProvider } from "@apollo/client/testing/react";
@@ -47,6 +47,7 @@ import {
 } from "@/routes/home/components/OverviewScreenTabs/reports/RevenueChart.graphql.ts";
 import HomeRouteCapacitor from "@/routes/home/home.route.capacitor";
 import { useSessionStore } from "@/stores/sessionStore";
+import { meQuery } from "@/tests/graphql/MeQuery";
 
 const DAY_MS = 86_400_000;
 const REFERENCE_END = Date.UTC(2026, 0, 29);
@@ -651,6 +652,14 @@ function createArchiveActivityMock(): MockedResponse<
 }
 
 const ROUTE_MOCKS: ReadonlyArray<MockedResponse> = [
+    meQuery({
+        me: {
+            id: "storybook-user-1",
+            name: "Erick",
+            email: "erick@example.com",
+            email_verified_at: REFERENCE_END,
+        },
+    }),
     ...REPORT_PERIODS.flatMap((period) => {
         return [
             createRevenueChartMock(period),
@@ -664,7 +673,14 @@ const ROUTE_MOCKS: ReadonlyArray<MockedResponse> = [
     createArchiveActivityMock(),
 ];
 
-const HomeCapacitorOverviewRouteStory: FC = () => {
+type HomeRouteCapacitorStoryProps = Pick<
+    ComponentProps<typeof HomeRouteCapacitor>,
+    "initialOverlay"
+>;
+
+const HomeCapacitorOverviewRouteStory: FC<HomeRouteCapacitorStoryProps> = ({
+    initialOverlay = "none",
+}) => {
     const [previousStatus] = useState(() => {
         const priorStatus = useSessionStore.getState().status;
         if (priorStatus !== "authenticated") {
@@ -682,7 +698,7 @@ const HomeCapacitorOverviewRouteStory: FC = () => {
 
     return (
         <MockedProvider mocks={ROUTE_MOCKS}>
-            <HomeRouteCapacitor />
+            <HomeRouteCapacitor initialOverlay={initialOverlay} />
         </MockedProvider>
     );
 };
@@ -690,6 +706,15 @@ const HomeCapacitorOverviewRouteStory: FC = () => {
 const meta = {
     title: "Screens/Home/Capacitor/Overview Route",
     component: HomeCapacitorOverviewRouteStory,
+    args: {
+        initialOverlay: "none",
+    },
+    argTypes: {
+        initialOverlay: {
+            control: "select",
+            options: ["none", "search", "menu", "settings"],
+        },
+    },
     parameters: {
         layout: "fullscreen",
     },
@@ -709,4 +734,28 @@ export const Authenticated: Story = {
             defaultViewport: "mobileSheet",
         },
     },
+};
+
+export const SearchOverlayOpen: Story = {
+    args: {
+        initialOverlay: "search",
+    },
+    globals: Authenticated.globals,
+    parameters: Authenticated.parameters,
+};
+
+export const MenuOverlayOpen: Story = {
+    args: {
+        initialOverlay: "menu",
+    },
+    globals: Authenticated.globals,
+    parameters: Authenticated.parameters,
+};
+
+export const SettingsOverlayOpen: Story = {
+    args: {
+        initialOverlay: "settings",
+    },
+    globals: Authenticated.globals,
+    parameters: Authenticated.parameters,
 };

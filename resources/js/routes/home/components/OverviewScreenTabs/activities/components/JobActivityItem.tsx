@@ -16,6 +16,7 @@ interface JobActivityItemProps {
     action: Pick<OverviewActivityEntry, "created_at" | "trigger">;
     target: JobActivityTarget;
     onArchivePress?: () => void;
+    onSnoozePress?: () => void;
     onPress?: () => void;
 }
 
@@ -23,6 +24,7 @@ const JobActivityItem: FC<JobActivityItemProps> = ({
     action,
     target,
     onArchivePress,
+    onSnoozePress,
     onPress,
 }) => {
     const { formatDuration, isOverdue } = useOverviewActivityTimeFormatter();
@@ -43,6 +45,7 @@ const JobActivityItem: FC<JobActivityItemProps> = ({
             timestamp={copy.timestamp}
             onPress={onPress}
             onArchivePress={onArchivePress}
+            onSnoozePress={onSnoozePress}
         />
     );
 };

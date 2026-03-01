@@ -41,9 +41,7 @@ describe("useUser", () => {
             email: "test@example.com",
             email_verified_at: null,
         });
-        expect(useSuspenseQueryMock).toHaveBeenCalledWith(expect.anything(), {
-            fetchPolicy: "network-only",
-        });
+        expect(useSuspenseQueryMock).toHaveBeenCalledWith(expect.anything());
     });
 
     it("throws when user data is unexpectedly missing", () => {

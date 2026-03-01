@@ -129,21 +129,25 @@ const AllItemsStory: FC = () => {
                 action={auditionAction}
                 target={auditionTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
             <JobActivityItem
                 action={jobAction}
                 target={jobTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
             <InvoiceActivityItem
                 action={invoiceAction}
                 target={invoiceTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
             <UsageRightActivityItem
                 action={usageRightAction}
                 target={usageRightTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
         </ActivitiesItemsStoryFrame>
     );
@@ -156,6 +160,7 @@ const AuditionOnlyStory: FC = () => {
                 action={auditionAction}
                 target={auditionTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
         </ActivitiesItemsStoryFrame>
     );
@@ -168,6 +173,7 @@ const JobOnlyStory: FC = () => {
                 action={jobAction}
                 target={jobTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
         </ActivitiesItemsStoryFrame>
     );
@@ -180,6 +186,7 @@ const InvoiceOnlyStory: FC = () => {
                 action={invoiceAction}
                 target={invoiceTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
         </ActivitiesItemsStoryFrame>
     );
@@ -192,6 +199,7 @@ const UsageRightOnlyStory: FC = () => {
                 action={usageRightAction}
                 target={usageRightTarget}
                 onArchivePress={() => {}}
+                onSnoozePress={() => {}}
             />
         </ActivitiesItemsStoryFrame>
     );

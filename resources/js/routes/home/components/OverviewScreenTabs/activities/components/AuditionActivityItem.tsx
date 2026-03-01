@@ -16,6 +16,7 @@ interface AuditionActivityItemProps {
     action: Pick<OverviewActivityEntry, "created_at" | "trigger">;
     target: AuditionActivityTarget;
     onArchivePress?: () => void;
+    onSnoozePress?: () => void;
     onPress?: () => void;
 }
 
@@ -23,6 +24,7 @@ const AuditionActivityItem: FC<AuditionActivityItemProps> = ({
     action,
     target,
     onArchivePress,
+    onSnoozePress,
     onPress,
 }) => {
     const { formatDuration, isOverdue } = useOverviewActivityTimeFormatter();
@@ -43,6 +45,7 @@ const AuditionActivityItem: FC<AuditionActivityItemProps> = ({
             timestamp={copy.timestamp}
             onPress={onPress}
             onArchivePress={onArchivePress}
+            onSnoozePress={onSnoozePress}
         />
     );
 };

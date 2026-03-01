@@ -47,6 +47,14 @@ Working order: small components -> screen composition -> tabs integration.
 - `RevenueBySourceChart.graphql`
 - `RevenueByCategoryChart.graphql`
 
+### 1.6 Native navigation/layout surfaces coupled to Overview
+- `frontend/src/navigation/RootNavigator.tsx`
+- `frontend/src/navigation/components/OverviewLayout.tsx`
+- `frontend/src/navigation/components/MenuDrawerContent/MenuDrawerContent.tsx`
+- `frontend/src/navigation/components/SearchDetailLayout.tsx`
+- `frontend/src/screens/search/SearchScreen/Search.screen.tsx`
+- `frontend/src/screens/overview/components/OverviewHeader.tsx`
+
 ## 2. Constraints and compatibility gaps in voxkit
 
 1. Backend naming differs:
@@ -65,6 +73,28 @@ Working order: small components -> screen composition -> tabs integration.
 4. Target policy:
 - Implement behavior on Capacitor route only for now
 - Keep web route untouched except neutral foundation wiring
+
+## 2.1 Audit delta (current status vs source parity)
+
+### Implemented / mostly aligned
+1. Reports + Activities tabs with lazy loading, swipe, suspense, and error boundary.
+2. Reports/Activities leaf components and GraphQL data flows.
+3. Activities archive mutation with optimistic response and toast feedback.
+4. Safe-area foundation updated to top + x at root, bottom inset opt-in per scroll/list.
+
+### Partial
+1. Tab shell visual structure is close, but header-coupled behavior is still missing.
+2. Activities badge query exists but tab badge parity is not yet wired to final UX.
+
+### Missing (high impact)
+1. Animated Overview header container with scroll-triggered hide/reveal.
+2. Header action parity:
+- search action opening Search flow
+- menu action opening right-side drawer
+- avatar/header action opening Settings modal flow
+3. Right drawer surface (position right, overlay behavior, close affordances) for Capacitor target.
+4. Search modal flow (full-screen style entry + detail navigation within search flow).
+5. Route-level modal orchestration for Settings/Search/Create-style flows used by header actions.
 
 ## 3. Execution plan (deep, review-gated)
 
@@ -324,40 +354,128 @@ Review gate:
 
 ---
 
-## Step 7: Final tabs integration (major)
+## Step 7: Header + Tab Coupling Parity (major)
 
-Goal: connect real Reports/Activities screens to existing tab component.
+Goal: finish Overview interaction parity between header, tab bar, and tab content.
 
 Files updated:
+- `resources/js/routes/home/components/OverviewHomeHeader.tsx` (new)
+- `resources/js/routes/home/components/overviewHeaderAnimation.ts` (new)
+- `resources/js/routes/home/components/OverviewScreenTabs/state/useOverviewLayoutStore.ts`
+- `resources/js/routes/home/home.route.capacitor.tsx`
 - `resources/js/routes/home/components/OverviewScreenTabs/OverviewScreenTabs.tsx`
 - `resources/js/routes/home/components/OverviewScreenTabs/types.ts`
 - tab stories/tests
 
 Behavior:
-1. Tabs = Reports + Activities
-2. Activities tab badge count from activities paginator total
-3. Keep swipe, lazy mount, suspense fallback, and error boundary model
-4. Ensure header reveal hook on tab press/swipe start parity
+1. Introduce dedicated Overview header component (avatar/greeter + actions).
+2. Header is measured and coupled with tab/content layout offsets.
+3. Scroll-triggered hide/reveal behavior is restored.
+4. Tab press + swipe start force header reveal (parity behavior).
+5. Activities tab badge count renders from activities paginator total.
+6. Keep swipe, lazy mount, suspense fallback, and error boundary model.
 
 Checks:
 - tab integration tests
+- focused header animation tests (store/behavior level where deterministic)
 - manual motion + swipe pass in mobile viewport
 
 Review gate:
-- approve tab interaction parity
+- approve header + tab coupling parity before navigation overlays
 
 ---
 
-## Step 8: Parity QA and hardening (final)
+## Step 8: Navigation Overlay Parity (major)
 
-Goal: close known parity gaps and ship safely.
+Goal: port navigation surfaces that Overview header actions depend on.
+
+Files planned:
+- `resources/js/routes/search/Search.route.capacitor.tsx` (new)
+- `resources/js/routes/search/components/*` (new, scoped to MVP parity)
+- `resources/js/components/ui/right-drawer/*` or route-level drawer surface (new)
+- `resources/js/app.capacitor.tsx` or route-shell composition updates (target-scoped)
+- `resources/js/routes/home/home.route.capacitor.tsx` (header action wiring)
+
+Behavior:
+1. Search action opens a Capacitor search surface with close/back behavior.
+2. Menu action opens right-side drawer with overlay and close affordances.
+3. Avatar/header action opens Settings modal-style surface.
+4. Keep web routing/surfaces untouched.
+
+Checks:
+- `npm run typecheck`
+- focused interaction tests (open/close states and route transitions)
+- Storybook route stories for drawer + search surface
+
+Review gate:
+- approve navigation overlay parity before final QA
+
+---
+
+### Step 8A: Temporary Navigation Contract Mapping (implemented stubs)
+
+Goal: make all outbound interactions explicit now, even before real routes/overlays are wired.
+
+Implemented contracts (current behavior = `console.info`):
+1. Header settings action -> `/settings`
+2. Header search action -> `/search`
+3. Header menu action -> `drawer:right`
+4. Activities audition row press -> `/auditions/:auditionId`
+5. Activities job row press -> `/jobs/:jobId`
+6. Activities invoice row press -> `/invoices/:invoiceId`
+7. Activities usage right row press -> `/usage-rights/:usageRightId`
+8. Activities snooze action -> temporary payload log (`activityId`, `targetType`, `targetId`)
+9. Activities archive action -> real mutation + toast (already wired)
+10. Search result detail contracts reserved (temporary stubs):
+- `/agents/:agentId`
+- `/clients/:clientId`
+- `/expenses/:expenseId`
+- `/platforms/:platformId`
+- `/notes/:noteId`
+
+Files:
+- `resources/js/routes/home/components/overviewNavigation.tsx`
+- `resources/js/routes/home/components/OverviewHomeHeader.tsx`
+- `resources/js/routes/home/home.route.capacitor.tsx`
+- `resources/js/routes/home/components/OverviewScreenTabs/activities/ActivitiesScreen.tsx`
+- `resources/js/routes/home/components/OverviewScreenTabs/activities/components/ActivitiesItem.tsx`
+
+Notes:
+- This keeps canonical path contracts stable while route/modal/drawer wiring is still pending.
+- Replace stubs incrementally with real route transitions and overlay state in Step 8 proper.
+
+---
+
+### Step 8B: Header Overlay Wiring (implemented)
+
+Goal: replace header `console.info` stubs with real Capacitor-only overlay surfaces while preserving detail-route stubs.
+
+Implemented:
+1. Search header action opens `OverviewSearchOverlay`.
+2. Settings header action opens `OverviewSettingsOverlay`.
+3. Menu header action opens `OverviewMenuDrawerOverlay` (right-side drawer with overlay + close).
+4. Overlay orchestration is route-scoped (`none | search | settings | menu`), one surface at a time.
+5. Activities detail actions remain contract stubs for now.
+
+Files:
+- `resources/js/routes/home/home.route.capacitor.tsx`
+- `resources/js/routes/home/components/overlays/OverviewSearchOverlay.tsx`
+- `resources/js/routes/home/components/overlays/OverviewSettingsOverlay.tsx`
+- `resources/js/routes/home/components/overlays/OverviewMenuDrawerOverlay.tsx`
+- `resources/js/routes/home/home.route.capacitor.stories.tsx`
+
+---
+
+## Step 9: Parity QA and hardening (final)
+
+Goal: close remaining gaps and ship safely.
 
 Checklist:
 1. Visual parity across header, tab bar, selector, cards, activity rows.
-2. Data parity for count badges and chart period transforms.
-3. Interaction parity for swipe, tab press, archive flow.
-4. Error fallback parity and retry behavior.
-5. Performance sanity: no eager loading of inactive tabs.
+2. Data parity for count badges, chart transforms, and search result rendering.
+3. Interaction parity for swipe, tab press, archive flow, drawer/search/settings actions.
+4. Error fallback parity and retry behavior across tabs and overlays.
+5. Performance sanity: no eager loading of inactive tabs; no blocking reflow loops.
 
 Checks:
 - `npm run test -- <overview-related tests>`
@@ -374,6 +492,7 @@ Deliverable:
 4. Keep gesture layer on existing `motion` only (no new gesture library).
 5. Use `activities` schema as the canonical replacement for inbox data in voxkit.
 6. Keep this rollout capacitor-only in route behavior for now.
+7. Approve Capacitor-only right drawer + search/modal overlay orchestration strategy (without changing web routing).
 
 ## 5. Deviation log template (fill during implementation)
 
